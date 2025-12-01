@@ -1114,20 +1114,6 @@
 
             // Asset Bar (Only 3: Stock, Cash, Fixed)
             const grand = total > 0 ? total : 1;
-            const pS = (sv / grand) * 100, pC = (appState.cash / grand) * 100, pF = (appState.fixed / grand) * 100;
-            const pBar = document.getElementById('allocProgressBar');
-            if (pBar) pBar.innerHTML = `<div class="progress-bar bg-primary" style="width:${pS}%" title="股票"></div><div class="progress-bar bg-info" style="width:${pC}%" title="現金"></div><div class="progress-bar bg-success" style="width:${pF}%" title="固定"></div>`;
-            setText('allocPercentText', `規模 ${formatCurrency(total)}`);
-
-            // Debt Bar
-            const debt = loans.reduce((a, b) => a + b.totalAmount, 0);
-            const net = total - debt;
-            setText('valTotalLiabilities', formatCurrency(debt));
-            setText('valNetWorth', formatCurrency(net));
-            const dr = total > 0 ? (debt / total) * 100 : 0;
-            const dBar = document.getElementById('debtProgressBar');
-            if (dBar) dBar.innerHTML = `<div class="progress-bar bg-danger" style="width:${Math.min(100, dr)}%" title="負債"></div><div class="progress-bar bg-secondary bg-opacity-25" style="width:${Math.max(0, 100 - dr)}%" title="淨值"></div>`;
-            setText('debtRatioText', `負債比 ${dr.toFixed(1)}%`);
         }
 
         function formatCurrency(n) { return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(n); }

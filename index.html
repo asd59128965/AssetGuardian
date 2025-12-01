@@ -422,18 +422,21 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label small text-muted">選擇結算月份：</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-calendar-alt"></i></span>
+                                <select id="inpMonthSelect" class="form-select form-select-sm bg-light border-0">
+                                    <!-- JS 生成選項 -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">本月吃喝玩樂金額：</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-0"><i class="fas fa-wallet"></i></span>
                                 <input type="number" id="inpMonthSpend" class="form-control bg-light border-0"
                                     placeholder="本月吃喝玩樂金額">
                             </div>
-                        </div>
-                        <!-- 新增月份選擇器 -->
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">選擇結算月份：</label>
-                            <select id="inpMonthSelect" class="form-select form-select-sm">
-                                <!-- JS 生成選項 -->
-                            </select>
                         </div>
                         <button class="btn btn-primary w-100 rounded-3 shadow-sm" onclick="settleMonth()">
                             確認結算
@@ -1014,14 +1017,26 @@
             const v = parseFloat(document.getElementById('inpMonthSpend').value);
             if (isNaN(v)) { alert("金額?"); return }
             const s = subscriptions.reduce((a, b) => a + b.amount, 0);
-            const l = loans.reduce((a, b) => a + b.monthlyPayment, 0);
+            // 只計算正在還款中的貸款
+            const now = new Date();
+            const activeLoans = loans.filter(l => {
+                if (!l.startDate || !l.endDate) return true;
+                const start = new Date(l.startDate);
+                const end = new Date(l.endDate);
+                return start <= now && now <= end;
+            });
+            const l = activeLoans.reduce((a, b) => a + b.monthlyPayment, 0);
             const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
             const out = v + s + l + i;
             const inc = appState.active + appState.passive;
+            const investRatio = appState.ratioInvest || 30;
+            const investTarget = Math.floor(inc * (investRatio / 100));
+            const totalFixed = s + l + i;
+            const realAvailable = Math.max(0, inc - investTarget - totalFixed);
             const sav = inc - out;
             appState.cash += sav;
-            const netB = Math.max(0, appState.currentBudget - s - i);
-            const d = v - netB;
+            // 用 realAvailable 作為判斷基準
+            const d = v - realAvailable;
             // 取得選定月份
             const monthSel = document.getElementById('inpMonthSelect');
             let dateStr;

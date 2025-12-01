@@ -428,6 +428,13 @@
                                     placeholder="本月吃喝玩樂金額">
                             </div>
                         </div>
+                        <!-- 新增月份選擇器 -->
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">選擇結算月份：</label>
+                            <select id="inpMonthSelect" class="form-select form-select-sm">
+                                <!-- JS 生成選項 -->
+                            </select>
+                        </div>
                         <button class="btn btn-primary w-100 rounded-3 shadow-sm" onclick="settleMonth()">
                             確認結算
                         </button>
@@ -760,6 +767,20 @@
             stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
             try {
                 await initDB(); await loadData();
+                // 生成月份選擇器
+                const monthSel = document.getElementById('inpMonthSelect');
+                if (monthSel) {
+                    const now = new Date();
+                    const currentYear = now.getFullYear();
+                    const currentMonth = now.getMonth();
+                    monthSel.innerHTML = '';
+                    for (let i = 0; i < 12; i++) {
+                        const date = new Date(currentYear, i, 1);
+                        const label = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+                        const value = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                        monthSel.innerHTML += `<option value="${value}"${i === currentMonth ? ' selected' : ''}>${label}</option>`;
+                    }
+                }
                 if (stocks.length > 0) refreshStockPrices(); else renderDashboard();
                 if (!appState.isSetup) openSettings();
             } catch (e) { console.error("DB Error:", e); }
@@ -989,7 +1010,32 @@
 
         async function loadData() { const s = await new Promise(x => getStore('settings').get('main_config').onsuccess = e => x(e.target.result)); if (s) appState = { ...defaultState, ...s.data }; stocks = await new Promise(x => getStore('stocks').getAll().onsuccess = e => x(e.target.result)); await refreshSubscriptions(); await refreshInsurance(); await refreshLoans() }
         async function saveSettings() { appState.cash = parseFloat(document.getElementById('inpCash').value) || 0; appState.fixed = parseFloat(document.getElementById('inpFixed').value) || 0; appState.active = parseFloat(document.getElementById('inpActive').value) || 0; appState.passive = parseFloat(document.getElementById('inpPassive').value) || 0; appState.target = parseFloat(document.getElementById('inpTarget').value) || 0; appState.baseBudget = parseFloat(document.getElementById('inpBaseBudget').value) || 0; appState.ratioLiving = parseInt(document.getElementById('rngRatioLiving').value); appState.ratioInvest = parseInt(document.getElementById('rngRatioInvest').value); appState.strategy = document.getElementById('strategyToggle').checked ? 'flexible' : 'strict'; appState.isSetup = true; if (appState.currentBudget === defaultState.currentBudget && !appState.isSetup) appState.currentBudget = appState.baseBudget; await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); settingsModal.hide(); renderDashboard() }
-        async function settleMonth() { const v = parseFloat(document.getElementById('inpMonthSpend').value); if (isNaN(v)) { alert("金額?"); return } const s = subscriptions.reduce((a, b) => a + b.amount, 0); const l = loans.reduce((a, b) => a + b.monthlyPayment, 0); const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0); const out = v + s + l + i; const inc = appState.active + appState.passive; const sav = inc - out; appState.cash += sav; const netB = Math.max(0, appState.currentBudget - s - i); const d = v - netB; await new Promise(x => getStore('records', 'readwrite').add({ date: new Date().toLocaleDateString(), spend: v, diff: d, status: d > 0 ? 'bad' : 'good', msg: d > 0 ? '超支' : '結餘', assetChange: sav }).onsuccess = x); await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); document.getElementById('inpMonthSpend').value = ''; renderDashboard() }
+        async function settleMonth() {
+            const v = parseFloat(document.getElementById('inpMonthSpend').value);
+            if (isNaN(v)) { alert("金額?"); return }
+            const s = subscriptions.reduce((a, b) => a + b.amount, 0);
+            const l = loans.reduce((a, b) => a + b.monthlyPayment, 0);
+            const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
+            const out = v + s + l + i;
+            const inc = appState.active + appState.passive;
+            const sav = inc - out;
+            appState.cash += sav;
+            const netB = Math.max(0, appState.currentBudget - s - i);
+            const d = v - netB;
+            // 取得選定月份
+            const monthSel = document.getElementById('inpMonthSelect');
+            let dateStr;
+            if (monthSel) {
+                // 以每月1日為紀錄日期
+                dateStr = monthSel.value + '-01';
+            } else {
+                dateStr = new Date().toLocaleDateString();
+            }
+            await new Promise(x => getStore('records', 'readwrite').add({ date: dateStr, spend: v, diff: d, status: d > 0 ? 'bad' : 'good', msg: d > 0 ? '超支' : '結餘', assetChange: sav }).onsuccess = x);
+            await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x);
+            document.getElementById('inpMonthSpend').value = '';
+            renderDashboard();
+        }
         async function deleteRecord(id, c) { if (confirm("刪?")) { appState.cash -= c; await new Promise(x => getStore('records', 'readwrite').delete(id).onsuccess = x); await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); renderDashboard() } }
         async function clearDB() { if (!confirm("清空?")) return; const tx = db.transaction(['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'], 'readwrite');['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'].forEach(s => tx.objectStore(s).clear()); tx.oncomplete = () => location.reload() }
 

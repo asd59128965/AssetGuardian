@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資產管家 V6.4 (保險與負債結構)</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-body: #f0f2f5;
+            --primary-color: #2c3e50;
+            --accent-color: #0d6efd;
+            --stock-up: #e63946;
+            --stock-down: #2a9d8f;
+        }
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif;
+            color: var(--primary-color);
+            padding-bottom: 80px;
+        }
+        
+        .navbar { background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        /* KPI Card */
+        .kpi-card {
+            background: #fff; border-radius: 12px; padding: 20px; border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03); height: 100%; position: relative; overflow: hidden;
+        }
+        .kpi-title { font-size: 0.9rem; color: #6c757d; font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 1.8rem; font-weight: 800; color: #212529; margin-top: 5px; }
+        .kpi-sub { font-size: 0.85rem; margin-top: 5px; font-weight: 500; }
+        .kpi-card::before { content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 4px; border-radius: 0 4px 4px 0; background: #ccc; }
+        .kpi-blue::before { background: #0d6efd; }
+        .kpi-green::before { background: #198754; }
+        .kpi-orange::before { background: #fd7e14; }
+        .kpi-red::before { background: #dc3545; }
+
+        /* Dashboard Cards */
+        .dashboard-card { background: #fff; border-radius: 16px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; height: 100%; }
+        .card-header-gradient { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; padding: 20px; }
+        
+        /* Table Styles */
+        .table-custom th { background-color: #f8f9fa; font-size: 0.85rem; text-transform: uppercase; color: #666; border:none; padding: 12px;}
+        .table-custom td { border-bottom: 1px solid #f0f0f0; vertical-align: middle; font-size: 0.95rem; padding: 12px; }
+        
+        .text-up { color: var(--stock-up) !important; font-weight: bold; }
+        .text-down { color: var(--stock-down) !important; font-weight: bold; }
+        
+        .btn-icon { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; border: none; }
+        .btn-delete { color: #dc3545; background: #fff5f5; }
+        .btn-delete:hover { background: #dc3545; color: white; }
+        .btn-refresh { color: #0d6efd; background: #e7f1ff; }
+        .btn-refresh:hover { background: #0d6efd; color: white; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Settings Modal Styles */
+        .nav-pills .nav-link { color: #555; border-radius: 8px; margin-bottom: 5px; text-align: left; padding: 12px 15px; }
+        .nav-pills .nav-link.active { background-color: var(--primary-color); color: white; }
+        .nav-pills .nav-link i { width: 25px; text-align: center; margin-right: 5px; }
+        
+        /* Allocation Bar */
+        .alloc-bar-container { height: 20px; background: #eee; border-radius: 10px; overflow: hidden; display: flex; }
+        .alloc-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: white; font-weight: bold; transition: width 0.3s; }
+
+        .sub-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 0.95rem; background: white; margin-bottom: 5px; border-radius: 6px;}
+        .loan-item { background-color: #f8f9fa; border-left: 4px solid #0d6efd; }
+        .ins-item { background-color: #fffbf0; border-left: 4px solid #ffc107; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-light mb-4 sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" href="#">
+            <i class="fas fa-chart-pie text-primary me-2"></i>資產管家 <span class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V6.4 保險/負債</span>
+        </a>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="openStockModal()">
+                <i class="fas fa-plus me-1"></i> 持股
+            </button>
+            <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="openSettings()">
+                <i class="fas fa-sliders-h me-1"></i> 財務規劃
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    
+    <!-- KPI Area -->
+    <div class="row g-3 mb-4">
+        <!-- 1. 總資產 -->
+        <div class="col-md-3 col-6">
+            <div class="kpi-card kpi-blue">
+                <div class="kpi-title">目前總資產 (TWD)</div>
+                <div class="kpi-value" id="dispTotalAssets">$0</div>
+                <div class="kpi-sub text-muted" id="dispTotalAssetsSub">含現金與股票市值</div>
+            </div>
+        </div>
+        <!-- 2. 可投資額度 -->
+        <div class="col-md-3 col-6">
+            <div class="kpi-card kpi-green">
+                <div class="kpi-title">每月建議投資額</div>
+                <div class="kpi-value text-success" id="dispInvestTarget">$0</div>
+                <div class="kpi-sub text-muted" id="dispInvestRatio">依照收入占比 0%</div>
+            </div>
+        </div>
+        <!-- 3. 預計達成 -->
+        <div class="col-md-3 col-6">
+            <div class="kpi-card kpi-orange">
+                <div class="kpi-title">預計達成</div>
+                <div class="kpi-value" id="dispDays">0 <span class="fs-6 fw-normal text-muted">天</span></div>
+                <div class="kpi-sub text-success" id="dispDate">--</div>
+            </div>
+        </div>
+        <!-- 4. 淨預算 -->
+        <div class="col-md-3 col-6">
+            <div class="kpi-card kpi-red">
+                <div class="kpi-title">本月「淨」可用額度</div>
+                <div class="kpi-value" id="dispCurrentBudget">$0</div>
+                <div class="kpi-sub text-muted" id="dispBudgetNote">扣除訂閱、保險與貸款</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: Stock Portfolio -->
+        <div class="col-lg-5">
+            <div class="dashboard-card">
+                <div class="card-header-gradient d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1 fw-bold"><i class="fas fa-coins me-2"></i>投資組合</h5>
+                        <small class="text-white-50">匯率: <span id="dispExRate">32.0</span> (USD/TWD)</small>
+                    </div>
+                    <button class="btn btn-light btn-sm text-primary fw-bold" onclick="refreshStockPrices()" id="btnRefreshStocks">
+                        <i class="fas fa-sync-alt me-1" id="iconRefresh"></i> 更新
+                    </button>
+                </div>
+                
+                <div class="p-0 table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead class="sticky-top bg-light">
+                            <tr>
+                                <th>代號</th>
+                                <th class="text-end">原幣現價</th>
+                                <th class="text-end">台幣市值/損益</th>
+                                <th class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">最後更新: <span id="lastUpdateStats">--</span></span>
+                    <span class="small fw-bold">股票總值: <span id="totalStockValue" class="text-primary">$0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle: Monthly Action -->
+        <div class="col-lg-3">
+             <div class="dashboard-card">
+                <div class="p-4 border-bottom">
+                    <h6 class="fw-bold text-secondary mb-3">月底結算 (變動花費)</h6>
+                    <div class="alert alert-light border small text-muted mb-3">
+                        固定扣款: <strong id="lblFixedMonthly">$0</strong><br>
+                        (含 貸款/保險/訂閱)<br>
+                        系統將自動計入，請只輸入<strong>吃喝玩樂</strong>金額。
+                    </div>
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-wallet"></i></span>
+                            <input type="number" id="inpMonthSpend" class="form-control bg-light border-0" placeholder="變動花費金額">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100 rounded-3 shadow-sm" onclick="settleMonth()">
+                        確認結算
+                    </button>
+                </div>
+                
+                <div class="p-0" style="height: 300px; overflow-y: auto;">
+                    <div class="px-3 py-2 bg-light border-bottom small fw-bold text-muted">歷史紀錄</div>
+                    <table class="table table-sm table-custom mb-0" style="font-size: 0.85rem;">
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Charts -->
+        <div class="col-lg-4">
+            <div class="dashboard-card">
+                <div class="p-3 border-bottom bg-white">
+                    <h6 class="fw-bold mb-0">資產成長預測 (未來一年)</h6>
+                </div>
+                <div class="p-3">
+                    <canvas id="growthChart" height="250"></canvas>
+                </div>
+                <div class="p-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-bold text-muted">財務結構 (含負債/保險)</span>
+                        <span class="small text-muted" id="allocPercentText">計算中...</span>
+                    </div>
+                    <div class="progress" style="height: 12px;" id="allocProgressBar">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" title="股票"></div>
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 0%" title="現金"></div>
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 0%" title="固定資產"></div>
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 0%" title="貸款(負債)"></div>
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 0%" title="保險(年額)"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 small text-muted" style="font-size: 0.75rem; flex-wrap: wrap;">
+                        <span class="me-2"><i class="fas fa-circle text-primary"></i> 股票</span>
+                        <span class="me-2"><i class="fas fa-circle text-info"></i> 現金</span>
+                        <span class="me-2"><i class="fas fa-circle text-success"></i> 固定</span>
+                        <span class="me-2"><i class="fas fa-circle text-danger"></i> 貸款</span>
+                        <span class="me-2"><i class="fas fa-circle text-warning"></i> 保險</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal (V6.0 Layout) -->
+<div class="modal fade" id="settingsModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow" style="height: 85vh;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="fas fa-sliders-h me-2 text-secondary"></i>財務規劃設定</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="overflow: hidden;">
+                <div class="d-flex h-100">
+                    <!-- Left Menu -->
+                    <div class="border-end p-3 h-100" style="width: 200px; min-width: 200px; overflow-y: auto;">
+                        <div class="nav flex-column nav-pills" id="settings-tab" role="tablist">
+                            <button class="nav-link active" id="tab-income" data-bs-toggle="pill" data-bs-target="#content-income" type="button"><i class="fas fa-bullseye"></i>收支配比</button>
+                            <button class="nav-link" id="tab-loan" data-bs-toggle="pill" data-bs-target="#content-loan" type="button"><i class="fas fa-university"></i>貸款與負債</button>
+                            <button class="nav-link" id="tab-ins" data-bs-toggle="pill" data-bs-target="#content-ins" type="button"><i class="fas fa-shield-alt"></i>保險管理</button>
+                            <button class="nav-link" id="tab-subs" data-bs-toggle="pill" data-bs-target="#content-subs" type="button"><i class="fas fa-file-invoice"></i>訂閱管理</button>
+                            <button class="nav-link" id="tab-assets" data-bs-toggle="pill" data-bs-target="#content-assets" type="button"><i class="fas fa-wallet"></i>資產盤點</button>
+                            <button class="nav-link" id="tab-system" data-bs-toggle="pill" data-bs-target="#content-system" type="button"><i class="fas fa-cogs"></i>系統</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Content -->
+                    <div class="p-4 flex-grow-1 h-100" style="overflow-y: auto;">
+                         <div class="tab-content" id="settings-tabContent">
+                            
+                                    <div class="mb-3">
+                                        <label class="form-label d-flex justify-content-between"><span><i class="fas fa-shopping-cart me-1 text-primary"></i> 生活消費占比</span><span class="fw-bold" id="valRatioLiving">60%</span></label>
+                                        <input type="range" class="form-range" id="rngRatioLiving" min="10" max="90" step="5" value="60" oninput="calcAllocations()">
+                                        <div class="d-flex justify-content-between small"><span class="text-muted">規劃上限: <strong id="calcMaxSpend">$0</strong></span><span class="text-danger" id="calcSpendWarning"></span></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label d-flex justify-content-between"><span><i class="fas fa-piggy-bank me-1 text-success"></i> 投資儲蓄占比</span><span class="fw-bold" id="valRatioInvest">30%</span></label>
+                                        <input type="range" class="form-range" id="rngRatioInvest" min="0" max="90" step="5" value="30" oninput="calcAllocations()">
+                                        <div class="small text-muted">建議投資額: <strong id="calcTargetInvest">$0</strong></div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="applyCalculatedBudget()"><i class="fas fa-check-circle me-1"></i> 套用「規劃上限」為本月預算</button>
+                                <div class="mt-2 text-muted small text-center">目前設定預算: <span id="dispBaseBudget">$0</span></div>
+                                <input type="hidden" id="inpBaseBudget">
+                            </div>
+
+                            <!-- Tab 2: Loan -->
+                            <div class="tab-pane fade" id="content-loan">
+                                <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">貸款專案管理</h6>
+                                <div class="bg-light p-3 rounded mb-3 border">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-4"><select id="inpLoanCat" class="form-select form-select-sm"><option value="房貸">房貸</option><option value="車貸">車貸</option><option value="學貸">學貸</option><option value="其他">其他</option></select></div>
+                                        <div class="col-8"><input type="text" id="inpLoanName" class="form-control form-select-sm" placeholder="名稱"></div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6"><label class="small text-muted">總額</label><input type="number" id="inpLoanTotal" class="form-control form-control-sm" oninput="calcLoanDetails()"></div>
+                                        <div class="col-6"><label class="small text-muted">利率(%)</label><input type="number" id="inpLoanRate" class="form-control form-control-sm" placeholder="2.1" oninput="calcLoanDetails()"></div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6"><label class="small text-muted">起始日</label><input type="date" id="inpLoanStart" class="form-control form-control-sm" oninput="calcLoanDetails()"></div>
+                                        <div class="col-6"><label class="small text-muted text-primary fw-bold">期數(月)</label><input type="number" id="inpLoanMonths" class="form-control form-control-sm" placeholder="240" oninput="calcLoanDetails()"></div>
+                                    </div>
+                                    <div class="card bg-white border p-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-center"><span class="text-success fw-bold">月還款(本息):</span><span class="fw-bold fs-5 text-success" id="txtLoanMonthly">$0</span><input type="hidden" id="inpLoanMonthly"><input type="hidden" id="inpLoanEnd"></div>
+                                    </div>
+                                    <button class="btn btn-primary w-100 btn-sm" onclick="addLoan()">新增貸款</button>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2"><span class="small text-muted">貸款列表</span><span class="fw-bold small">月還款總計: <span id="totalLoanPayment" class="text-danger">$0</span></span></div>
+                                <div id="loanList" style="max-height: 150px; overflow-y: auto;"></div>
+                            </div>
+
+                            <!-- Tab 3: Insurance (NEW) -->
+                            <div class="tab-pane fade" id="content-ins">
+                                <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">保險管理 (固定支出)</h6>
+                                <div class="bg-light p-3 rounded mb-3 border">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-8">
+                                            <input type="text" id="inpInsName" class="form-control" placeholder="保險項目 (例: 醫療險)">
+                                        </div>
+                                        <div class="col-4">
+                                            <select id="inpInsFreq" class="form-select">
+                                                <option value="12">年繳</option>
+                                                <option value="1">月繳</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="input-group mb-2">
+                                        <input type="number" id="inpInsAmount" class="form-control" placeholder="金額 (依繳別)">
+                                        <button type="button" class="btn btn-warning text-dark" onclick="addInsurance()">
+                                            <i class="fas fa-plus"></i> 新增
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                                    <span class="small text-muted">保險列表 (自動換算月均)</span>
+                                    <span class="fw-bold text-warning" id="totalInsDisplay">$0 /月</span>
+                                </div>
+                                <div id="insList" style="max-height: 250px; overflow-y: auto;"></div>
+                            </div>
+
+                            <!-- Tab 4: Subscriptions -->
+                            <div class="tab-pane fade" id="content-subs">
+                                <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">訂閱管理 (消費性固定支出)</h6>
+                                <div class="input-group mb-3">
+                                    <input type="text" id="inpSubName" class="form-control" placeholder="項目 (如 Netflix)">
+                                    <input type="number" id="inpSubAmount" class="form-control" placeholder="金額" style="max-width: 120px;">
+                                    <button type="button" class="btn btn-primary" onclick="addSubscription()"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                                    <span class="small text-muted">目前訂閱總額</span>
+                                    <span class="fw-bold text-primary" id="totalSubsDisplay">$0</span>
+                                </div>
+                                <div id="subsList" style="max-height: 250px; overflow-y: auto;"></div>
+                            </div>
+
+                            <!-- Tab 5: Assets -->
+                            <div class="tab-pane fade" id="content-assets">
+                                <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">資產盤點 (不含股票)</h6>
+                                <div class="mb-3"><label class="form-label fw-bold">現金/存款 (TWD)</label><input type="number" id="inpCash" class="form-control" placeholder="0"></div>
+                                <div class="mb-3"><label class="form-label fw-bold">固定資產 (TWD)</label><input type="number" id="inpFixed" class="form-control" placeholder="0"></div>
+                            </div>
+
+                            <!-- Tab 6: System -->
+                            <div class="tab-pane fade" id="content-system">
+                                <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">系統設定</h6>
+                                <div class="mb-3 form-check form-switch"><input class="form-check-input" type="checkbox" id="strategyToggle"><label class="form-check-label fw-bold" for="strategyToggle">彈性模式</label></div>
+                                <hr>
+                                <button type="button" class="btn btn-outline-danger w-100" onclick="clearDB()"><i class="fas fa-trash-alt me-2"></i> 重置所有資料</button>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" onclick="saveSettings()">儲存所有設定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Stock Modal -->
+<div class="modal fade" id="stockModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold">新增持股</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="small text-muted">股票代號</label><input type="text" id="inpStockSymbol" class="form-control" placeholder="例如: 2330.TW"></div>
+                <div class="row g-2">
+                    <div class="col-6"><label class="small text-muted">成本(原幣)</label><input type="number" id="inpStockCost" class="form-control"></div>
+                    <div class="col-6"><label class="small text-muted">股數</label><input type="number" id="inpStockShares" class="form-control"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="addStock()">加入</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- IndexedDB Core (V5) ---
+    const DB_NAME = 'AssetPlannerDB';
+    const DB_VERSION = 5; // Upgraded for Insurance
+    let db;
+    let usdTwdRate = 32.5;
+
+    const defaultState = {
+        cash: 0, fixed: 0, active: 0, passive: 0, 
+        target: 1000000, 
+        baseBudget: 30000, currentBudget: 30000, 
+        ratioLiving: 60, ratioInvest: 30,
+        strategy: 'strict', isSetup: false
+    };
+
+    let appState = { ...defaultState };
+    let stocks = [];
+    let subscriptions = [];
+    let loans = [];
+    let insurances = []; // New
+    let chartInstance = null;
+    let loanPreviewChartInstance = null;
+    let settingsModal, stockModal;
+
+    window.onload = async function() {
+        settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+        stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
+        
+        try {
+            await initDB();
+            await loadData();
+            
+            if (stocks.length > 0) refreshStockPrices();
+            else renderDashboard();
+
+            if (!appState.isSetup) {
+                openSettings();
+            }
+        } catch (e) {
+            console.error("DB Error:", e);
+        }
+    };
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = (e) => reject(e.target.error);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('records')) {
+                    const store = db.createObjectStore('records', { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('date', 'date', { unique: false });
+                }
+                if (!db.objectStoreNames.contains('stocks')) db.createObjectStore('stocks', { keyPath: 'id', autoIncrement: true });
+                if (!db.objectStoreNames.contains('subscriptions')) db.createObjectStore('subscriptions', { keyPath: 'id', autoIncrement: true });
+                if (!db.objectStoreNames.contains('loans')) db.createObjectStore('loans', { keyPath: 'id', autoIncrement: true });
+                // V5: Insurance
+                if (!db.objectStoreNames.contains('insurance')) db.createObjectStore('insurance', { keyPath: 'id', autoIncrement: true });
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+        });
+    }
+
+    const getStore = (name, mode='readonly') => db.transaction([name], mode).objectStore(name);
+
+    // --- Core Logic ---
+    function calcAllocations() {
+        const active = parseFloat(document.getElementById('inpActive').value) || 0;
+        const passive = parseFloat(document.getElementById('inpPassive').value) || 0;
+        const totalIncome = active + passive;
+        
+        const ratioLiving = parseInt(document.getElementById('rngRatioLiving').value);
+        const ratioInvest = parseInt(document.getElementById('rngRatioInvest').value);
+        const ratioDebt = Math.max(0, 100 - ratioLiving - ratioInvest);
+
+        if(document.getElementById('dispTotalIncome')) document.getElementById('dispTotalIncome').innerText = formatCurrency(totalIncome);
+        if(document.getElementById('valRatioLiving')) document.getElementById('valRatioLiving').innerText = ratioLiving + '%';
+        if(document.getElementById('valRatioInvest')) document.getElementById('valRatioInvest').innerText = ratioInvest + '%';
+        
+        if(document.getElementById('barLiving')) {
+            document.getElementById('barLiving').style.width = ratioLiving + '%';
+            document.getElementById('barLiving').innerText = `消費 ${ratioLiving}%`;
+        }
+        if(document.getElementById('barInvest')) {
+            document.getElementById('barInvest').style.width = ratioInvest + '%';
+            document.getElementById('barInvest').innerText = `投資 ${ratioInvest}%`;
+        }
+        if(document.getElementById('barDebt')) {
+            document.getElementById('barDebt').style.width = ratioDebt + '%';
+            document.getElementById('barDebt').innerText = `其他 ${ratioDebt}%`;
+        }
+
+        const maxSpend = Math.floor(totalIncome * (ratioLiving / 100));
+        const targetInvest = Math.floor(totalIncome * (ratioInvest / 100));
+        
+        if(document.getElementById('calcMaxSpend')) document.getElementById('calcMaxSpend').innerText = formatCurrency(maxSpend);
+        if(document.getElementById('calcTargetInvest')) document.getElementById('calcTargetInvest').innerText = formatCurrency(targetInvest);
+
+        // Subscriptions Check
+        const totalSubs = subscriptions.reduce((acc, s) => acc + s.amount, 0);
+        const spendWarningEl = document.getElementById('calcSpendWarning');
+        const availableForVariable = maxSpend - totalSubs;
+        if (spendWarningEl) {
+            if (availableForVariable < 0) {
+                spendWarningEl.innerText = `警告: 訂閱費已超過預算!`;
+            } else {
+                spendWarningEl.innerText = `(扣除訂閱後剩: ${formatCurrency(availableForVariable)})`;
+            }
+        }
+    }
+
+    function applyCalculatedBudget() {
+        const txt = document.getElementById('calcMaxSpend').innerText;
+        const val = parseFloat(txt.replace(/[$,]/g, ''));
+        if(val > 0) {
+            document.getElementById('inpBaseBudget').value = val;
+            document.getElementById('dispBaseBudget').innerText = formatCurrency(val);
+        }
+    }
+
+    // --- Insurance Logic (New V6.4) ---
+    async function addInsurance() {
+        const name = document.getElementById('inpInsName').value;
+        const freq = parseInt(document.getElementById('inpInsFreq').value); // 1 or 12
+        const amount = parseFloat(document.getElementById('inpInsAmount').value);
+        
+        if(!name || isNaN(amount)) return;
+        
+        // Calculate monthly burden
+        const monthlyAvg = amount / (freq === 12 ? 1 : 1); // wait, if freq is 12 (annual), we want total / 1? No.
+        // Input: "金額 (依繳別)". If annual, amount is 24000. monthly is 2000.
+        // Let's store raw input and calculate display
+        
+        await new Promise(r => getStore('insurance', 'readwrite').add({name, freq, amount}).onsuccess = r);
+        document.getElementById('inpInsName').value = '';
+        document.getElementById('inpInsAmount').value = '';
+        await refreshInsurance();
+    }
+
+    async function removeInsurance(id) {
+        await new Promise(r => getStore('insurance', 'readwrite').delete(id).onsuccess = r);
+        await refreshInsurance();
+    }
+
+    async function refreshInsurance() {
+        const req = getStore('insurance').getAll();
+        insurances = await new Promise(r => req.onsuccess = () => r(req.result || []));
+        
+        const listEl = document.getElementById('insList');
+        let totalMonthly = 0;
+        listEl.innerHTML = '';
+        
+        insurances.forEach(ins => {
+            const monthlyCost = ins.freq === 12 ? ins.amount / 12 : ins.amount;
+            totalMonthly += monthlyCost;
+            
+            const div = document.createElement('div');
+            div.className = 'sub-item ins-item mb-2 rounded';
+            div.innerHTML = `
+                <div>
+                    <span class="fw-bold">${ins.name}</span>
+                    <small class="text-muted ms-2">${ins.freq===12?'年繳':'月繳'} $${ins.amount}</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <small class="me-3 text-warning">月均 $${Math.round(monthlyCost)}</small>
+                    <button class="btn btn-sm text-danger" onclick="removeInsurance(${ins.id})"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `;
+            listEl.appendChild(div);
+        });
+        document.getElementById('totalInsDisplay').innerText = formatCurrency(Math.round(totalMonthly)) + " /月";
+    }
+
+    // --- Loans Logic (Auto Calculation) ---
+    function calcLoanDetails() {
+        const total = parseFloat(document.getElementById('inpLoanTotal').value) || 0;
+        const rateYear = parseFloat(document.getElementById('inpLoanRate').value) || 0;
+        const months = parseInt(document.getElementById('inpLoanMonths').value) || 0;
+        const startStr = document.getElementById('inpLoanStart').value;
+
+        let monthlyPayment = 0;
+        let endDateStr = '';
+
+        if (total > 0 && months > 0) {
+            if (rateYear === 0) {
+                monthlyPayment = total / months;
+            } else {
+                const r = rateYear / 100 / 12;
+                monthlyPayment = total * (r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+            }
+        }
+
+        if (startStr && months > 0) {
+            const d = new Date(startStr);
+            d.setMonth(d.getMonth() + months);
+            endDateStr = d.toISOString().split('T')[0]; 
+        }
+
+        document.getElementById('inpLoanMonthly').value = monthlyPayment; 
+        document.getElementById('txtLoanMonthly').innerText = formatCurrency(Math.round(monthlyPayment));
+        document.getElementById('inpLoanEnd').value = endDateStr;
+    }
+
+    async function addLoan() {
+        const category = document.getElementById('inpLoanCat').value;
+        const name = document.getElementById('inpLoanName').value;
+        const totalAmount = parseFloat(document.getElementById('inpLoanTotal').value) || 0;
+        const rate = parseFloat(document.getElementById('inpLoanRate').value) || 0;
+        const startDate = document.getElementById('inpLoanStart').value;
+        const endDate = document.getElementById('inpLoanEnd').value;
+        const monthlyPayment = parseFloat(document.getElementById('inpLoanMonthly').value);
+
+        if(!name || isNaN(monthlyPayment)) return;
+
+        await new Promise(r => getStore('loans', 'readwrite').add({
+            category, name, totalAmount, rate, startDate, endDate, monthlyPayment
+        }).onsuccess = r);
+
+        document.getElementById('inpLoanName').value = '';
+        document.getElementById('inpLoanTotal').value = '';
+        document.getElementById('inpLoanRate').value = '';
+        document.getElementById('inpLoanMonths').value = '';
+        document.getElementById('inpLoanStart').value = '';
+        calcLoanDetails(); 
+        
+        await refreshLoans();
+    }
+
+    async function deleteLoan(id) {
+        if(!confirm("確定刪除此貸款項目？")) return;
+        await new Promise(r => getStore('loans', 'readwrite').delete(id).onsuccess = r);
+        await refreshLoans();
+    }
+
+    async function refreshLoans() {
+        const req = getStore('loans').getAll();
+        loans = await new Promise(r => req.onsuccess = () => r(req.result || []));
+        const listEl = document.getElementById('loanList');
+        let totalMonthly = 0;
+        listEl.innerHTML = '';
+        loans.forEach(l => {
+            totalMonthly += l.monthlyPayment;
+            const div = document.createElement('div');
+            div.className = 'sub-item loan-item mb-2 rounded';
+            div.innerHTML = `
+                <div>
+                    <span class="badge bg-secondary me-2">${l.category}</span>
+                    <span class="fw-bold text-dark">${l.name}</span>
+                    <div class="text-muted small mt-1">
+                        月繳: <strong>${formatCurrency(l.monthlyPayment)}</strong> | 
+                        餘額: ${formatCurrency(l.totalAmount)}
+                    </div>
+                </div>
+                <button class="btn btn-sm text-danger" onclick="deleteLoan(${l.id})"><i class="fas fa-trash-alt"></i></button>
+            `;
+            listEl.appendChild(div);
+        });
+        document.getElementById('totalLoanPayment').innerText = formatCurrency(totalMonthly);
+        calcAllocations(); 
+        renderDashboard();
+    }
+
+    // --- Chart Projection (12 Months) ---
+    function calculateAssetCurve(monthsToProject) {
+        let totalStockVal = stocks.reduce((sum, s) => {
+            const isTw = s.symbol.toUpperCase().includes('.TW');
+            const rate = isTw ? 1 : usdTwdRate;
+            return sum + (s.currentPrice * s.shares * rate);
+        }, 0);
+        let currentLiquid = appState.cash + totalStockVal;
+        
+        let curveTotal = [];
+        let curveFixed = [];
+        let curveLiquid = [];
+        let labels = [];
+        
+        let runFixed = appState.fixed;
+        let runLiquid = currentLiquid;
+        
+        const income = appState.active + appState.passive;
+        const livingBudget = appState.currentBudget;
+        const today = new Date();
+        
+        for (let i = 0; i <= monthsToProject; i++) {
+            let activeLoansSum = 0;
+            const futureDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
+            
+            loans.forEach(l => {
+                if (l.endDate) {
+                    const end = new Date(l.endDate);
+                    if (futureDate <= end) activeLoansSum += l.monthlyPayment;
+                } else {
+                    activeLoansSum += l.monthlyPayment;
+                }
+            });
+            
+            let monthlySaving = income - livingBudget - activeLoansSum;
+            
+            if (i > 0) runLiquid += monthlySaving;
+            
+            runFixed = Math.round(runFixed);
+            runLiquid = Math.round(runLiquid);
+            
+            curveFixed.push(runFixed);
+            curveLiquid.push(runLiquid);
+            curveTotal.push(runFixed + runLiquid);
+            labels.push(i === 0 ? 'Now' : `M${i}`);
+        }
+        
+        return { labels, total: curveTotal, fixed: curveFixed, liquid: curveLiquid };
+    }
+
+    // --- Subscriptions Logic ---
+    async function addSubscription() {
+        const name = document.getElementById('inpSubName').value;
+        const amount = parseFloat(document.getElementById('inpSubAmount').value);
+        if(!name || isNaN(amount)) return;
+        await new Promise(r => getStore('subscriptions', 'readwrite').add({name, amount}).onsuccess = r);
+        document.getElementById('inpSubName').value = '';
+        document.getElementById('inpSubAmount').value = '';
+        await refreshSubscriptions();
+        calcAllocations();
+    }
+    async function removeSubscription(id) {
+        await new Promise(r => getStore('subscriptions', 'readwrite').delete(id).onsuccess = r);
+        await refreshSubscriptions();
+        calcAllocations();
+    }
+    async function refreshSubscriptions() {
+        const req = getStore('subscriptions').getAll();
+        subscriptions = await new Promise(r => req.onsuccess = () => r(req.result || []));
+        const listEl = document.getElementById('subsList');
+        let total = 0;
+        listEl.innerHTML = '';
+        subscriptions.forEach(sub => {
+            total += sub.amount;
+            const div = document.createElement('div');
+            div.className = 'sub-item shadow-sm border-0';
+            div.innerHTML = `<span class="fw-bold text-secondary">${sub.name} <span class="text-dark ms-2 fw-normal">($${sub.amount})</span></span><button class="btn btn-sm text-danger" onclick="removeSubscription(${sub.id})"><i class="fas fa-trash-alt"></i></button>`;
+            listEl.appendChild(div);
+        });
+        document.getElementById('totalSubsDisplay').innerText = formatCurrency(total);
+    }
+    
+    // --- Stock Logic ---
+    async function addStock() {
+        const symbol = document.getElementById('inpStockSymbol').value.toUpperCase().trim();
+        const cost = parseFloat(document.getElementById('inpStockCost').value);
+        const shares = parseFloat(document.getElementById('inpStockShares').value);
+        if (!symbol || isNaN(cost) || isNaN(shares)) return;
+        const newStock = { symbol, cost, shares, currentPrice: cost, lastUpdate: new Date().getTime() };
+        await new Promise(r => getStore('stocks', 'readwrite').add(newStock).onsuccess = r);
+        stockModal.hide();
+        await loadData();
+        refreshStockPrices();
+    }
+    async function deleteStock(id) {
+        if(!confirm("確定移除？")) return;
+        await new Promise(r => getStore('stocks', 'readwrite').delete(id).onsuccess = r);
+        loadData().then(renderDashboard);
+    }
+
+    async function refreshStockPrices() {
+        const btn = document.getElementById('btnRefreshStocks');
+        const icon = document.getElementById('iconRefresh');
+        const rateDisplay = document.getElementById('dispExRate');
+        icon.classList.add('spin');
+        btn.disabled = true;
+        try {
+            const urlRate = `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/USDTWD=X?interval=1d&range=1d`;
+            const resRate = await fetch(urlRate);
+            const dataRate = await resRate.json();
+            if (dataRate.chart?.result?.[0]?.meta) {
+                usdTwdRate = dataRate.chart.result[0].meta.regularMarketPrice;
+                rateDisplay.innerText = usdTwdRate.toFixed(2);
+            }
+        } catch (e) {}
+
+        const updatedStocks = [];
+        let totalAnnualDividendsTWD = 0;
+
+        for (let stock of stocks) {
+            try {
+                // 1. Fetch Price
+                const url = `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=1d`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.chart?.result?.[0]?.meta) {
+                    stock.currentPrice = data.chart.result[0].meta.regularMarketPrice;
+                    stock.lastUpdate = new Date().getTime();
+                    await new Promise(r => getStore('stocks', 'readwrite').put(stock).onsuccess = r);
+                }
+
+                // 2. Fetch Dividends (Past 1 Year)
+                const divUrl = `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=1y&events=div`;
+                const divRes = await fetch(divUrl);
+                const divData = await divRes.json();
+                
+                let stockTotalDiv = 0;
+                const events = divData.chart?.result?.[0]?.events;
+                if (events && events.dividends) {
+                    Object.values(events.dividends).forEach(d => {
+                        stockTotalDiv += d.amount;
+                    });
+                }
+                
+                const isTw = stock.symbol.toUpperCase().includes('.TW');
+                const rate = isTw ? 1 : usdTwdRate;
+                totalAnnualDividendsTWD += (stockTotalDiv * stock.shares * rate);
+
+            } catch (e) {
+                console.error(`Error updating ${stock.symbol}:`, e);
+            }
+            updatedStocks.push(stock);
+        }
+        stocks = updatedStocks;
+        
+        // Update Passive Income
+        const monthlyPassive = Math.round(totalAnnualDividendsTWD / 12);
+        appState.passive = monthlyPassive;
+        document.getElementById('inpPassive').value = monthlyPassive;
+        await new Promise(r => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = r);
+        calcAllocations();
+
+        renderDashboard();
+        icon.classList.remove('spin');
+        btn.disabled = false;
+        document.getElementById('lastUpdateStats').innerText = new Date().toLocaleTimeString();
+    }
+
+    // --- Main Logic ---
+    async function loadData() {
+        const sReq = getStore('settings').get('main_config');
+        const sRes = await new Promise(r => sReq.onsuccess = () => r(sReq.result));
+        if (sRes) {
+            appState = { ...defaultState, ...sRes.data };
+            if (sRes.data.liquid !== undefined) { appState.cash = sRes.data.liquid; delete appState.liquid; }
+        }
+        const stocksReq = getStore('stocks').getAll();
+        stocks = await new Promise(r => stocksReq.onsuccess = () => r(stocksReq.result || []));
+        await refreshSubscriptions();
+        await refreshInsurance();
+        await refreshLoans();
+    }
+
+    function openSettings() {
+        document.getElementById('inpCash').value = appState.cash;
+        document.getElementById('inpFixed').value = appState.fixed;
+        document.getElementById('inpActive').value = appState.active;
+        document.getElementById('inpPassive').value = appState.passive;
+        document.getElementById('inpTarget').value = appState.target;
+        document.getElementById('inpBaseBudget').value = appState.baseBudget;
+        document.getElementById('dispBaseBudget').innerText = formatCurrency(appState.baseBudget);
+        document.getElementById('rngRatioLiving').value = appState.ratioLiving || 60;
+        document.getElementById('rngRatioInvest').value = appState.ratioInvest || 30;
+        document.getElementById('strategyToggle').checked = (appState.strategy === 'flexible');
+        calcAllocations();
+        const triggerEl = document.querySelector('#settings-tab button[data-bs-target="#content-income"]');
+        bootstrap.Tab.getInstance(triggerEl)?.show() || new bootstrap.Tab(triggerEl).show();
+        settingsModal.show();
+    }
+    function openStockModal() { stockModal.show(); }
+    async function saveSettings() {
+        appState.cash = parseFloat(document.getElementById('inpCash').value) || 0;
+        appState.fixed = parseFloat(document.getElementById('inpFixed').value) || 0;
+        appState.active = parseFloat(document.getElementById('inpActive').value) || 0;
+        appState.passive = parseFloat(document.getElementById('inpPassive').value) || 0;
+        appState.target = parseFloat(document.getElementById('inpTarget').value) || 0;
+        appState.baseBudget = parseFloat(document.getElementById('inpBaseBudget').value) || 0;
+        appState.ratioLiving = parseInt(document.getElementById('rngRatioLiving').value);
+        appState.ratioInvest = parseInt(document.getElementById('rngRatioInvest').value);
+        appState.strategy = document.getElementById('strategyToggle').checked ? 'flexible' : 'strict';
+        appState.isSetup = true;
+        if (appState.currentBudget === defaultState.currentBudget && !appState.isSetup) appState.currentBudget = appState.baseBudget;
+        await new Promise(r => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = r);
+        settingsModal.hide();
+        renderDashboard();
+    }
+    async function settleMonth() {
+        const inp = document.getElementById('inpMonthSpend');
+        const variableSpend = parseFloat(inp.value);
+        if (isNaN(variableSpend)) { alert("請輸入金額"); return; }
+        
+        const totalSubs = subscriptions.reduce((acc, s) => acc + s.amount, 0);
+        const totalLoans = loans.reduce((acc, l) => acc + l.monthlyPayment, 0);
+        const totalIns = insurances.reduce((acc, i) => acc + (i.freq===12?i.amount/12:i.amount), 0);
+        
+        const totalSpend = variableSpend + totalSubs + totalLoans + totalIns;
+        const totalIncome = appState.active + appState.passive;
+        const actualSaved = totalIncome - totalSpend;
+        
+        const netBudget = appState.currentBudget - totalSubs - totalIns;
+        const diff = variableSpend - netBudget; 
+        
+        appState.cash += actualSaved;
+        const record = { date: new Date().toLocaleDateString(), spend: variableSpend, diff: diff, status: diff>0?'bad':'good', msg: diff>0?'超支':'結餘', assetChange: actualSaved };
+        await new Promise(r => getStore('records', 'readwrite').add(record).onsuccess = r);
+        await new Promise(r => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = r);
+        inp.value = '';
+        renderDashboard();
+    }
+    async function deleteRecord(id, cashChange) {
+        if(!confirm("確定刪除？")) return;
+        appState.cash -= cashChange;
+        await new Promise(r => getStore('records', 'readwrite').delete(id).onsuccess = r);
+        await new Promise(r => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = r);
+        renderDashboard();
+    }
+    async function clearDB() {
+        if(!confirm("確定清空？")) return;
+        const tx = db.transaction(['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'], 'readwrite');
+        tx.objectStore('settings').clear();
+        tx.objectStore('records').clear();
+        tx.objectStore('stocks').clear();
+        tx.objectStore('subscriptions').clear();
+        tx.objectStore('loans').clear();
+        tx.objectStore('insurance').clear();
+        tx.oncomplete = () => location.reload();
+    }
+
+    async function renderDashboard() {
+        let totalStockValueTWD = 0;
+        const stockTbody = document.getElementById('stockTableBody');
+        stockTbody.innerHTML = '';
+        stocks.forEach(s => {
+            const isTw = s.symbol.toUpperCase().includes('.TW');
+            const rate = isTw ? 1 : usdTwdRate;
+            const valOrigin = s.currentPrice * s.shares;
+            const valCost = s.cost * s.shares;
+            const profit = (valOrigin - valCost) * rate;
+            const profitClass = profit >= 0 ? 'text-up' : 'text-down';
+            const profitSign = profit >= 0 ? '+' : '';
+            
+            totalStockValueTWD += (valOrigin * rate);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><div class="fw-bold">${s.symbol}</div></td>
+                <td class="text-end">${s.currentPrice.toFixed(2)}</td>
+                <td class="text-end">
+                    <div>${formatCurrency(valOrigin*rate)}</div>
+                    <div class="small ${profitClass}">${profitSign}${formatCurrency(profit)}</div>
+                </td>
+                <td class="text-center"><button class="btn-icon btn-delete" onclick="deleteStock(${s.id})"><i class="fas fa-trash"></i></button></td>
+            `;
+            stockTbody.appendChild(tr);
+        });
+        document.getElementById('totalStockValue').innerText = formatCurrency(totalStockValueTWD);
+
+        const totalLiquidTWD = appState.cash + totalStockValueTWD;
+        const totalAssetsTWD = totalLiquidTWD + appState.fixed;
+        const gap = appState.target - totalAssetsTWD;
+        document.getElementById('dispTotalAssets').innerText = formatCurrency(totalAssetsTWD);
+        document.getElementById('dispTotalAssetsSub').innerText = `含現金 ${formatCurrency(appState.cash)} + 股票`;
+
+        const totalIncome = appState.active + appState.passive;
+        const investRatio = appState.ratioInvest || 30;
+        document.getElementById('dispInvestTarget').innerText = formatCurrency(Math.floor(totalIncome * (investRatio/100)));
+
+        // Fixed Costs
+        const totalSubs = subscriptions.reduce((acc, s) => acc + s.amount, 0);
+        const totalLoansMonthly = loans.reduce((acc, l) => acc + l.monthlyPayment, 0);
+        const totalInsMonthly = insurances.reduce((acc, i) => acc + (i.freq===12?i.amount/12:i.amount), 0);
+        
+        const netBudget = Math.max(0, appState.currentBudget - totalSubs - totalInsMonthly);
+        document.getElementById('dispCurrentBudget').innerText = formatCurrency(netBudget);
+        document.getElementById('lblFixedMonthly').innerText = formatCurrency(totalSubs + totalLoansMonthly + totalInsMonthly);
+
+        // Date Projection
+        const estSaving = totalIncome - appState.currentBudget - totalLoansMonthly;
+        const calcLimit = 120; 
+        const projectionFull = calculateAssetCurve(calcLimit);
+        let achievedIndex = -1;
+        for(let i=0; i<projectionFull.total.length; i++) { if(projectionFull.total[i] >= appState.target) { achievedIndex = i; break; } }
+        const dayEl = document.getElementById('dispDays');
+        if (gap <= 0) dayEl.innerHTML = "已達成"; 
+        else if (achievedIndex === -1) dayEl.innerHTML = estSaving <= 0 ? "無限期" : "> 10 年";
+        else dayEl.innerHTML = `${Math.ceil(achievedIndex * 30)} 天`;
+
+        const recordsReq = getStore('records').getAll();
+        recordsReq.onsuccess = () => {
+            const list = recordsReq.result.sort((a,b) => b.id - a.id);
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            list.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r.date}</td><td>${formatCurrency(r.spend)}</td><td><span class="badge ${r.status==='bad'?'bg-danger':'bg-success'}">${r.msg}</span></td>`;
+                tbody.appendChild(tr);
+            });
+        };
+
+        // Render Stacked Chart (12 months)
+        const viewMonths = 12;
+        const chartData = {
+            labels: projectionFull.labels.slice(0, viewMonths + 1),
+            liquid: projectionFull.liquid.slice(0, viewMonths + 1),
+            fixed: projectionFull.fixed.slice(0, viewMonths + 1)
+        };
+        drawChart(chartData);
+        
+        // Asset Structure Bar with Colors
+        const safeTotal = totalAssetsTWD > 0 ? totalAssetsTWD : 1; 
+        const pStock = (totalStockValueTWD / safeTotal)*100;
+        const pCash = (appState.cash / safeTotal)*100;
+        const pFixed = (appState.fixed / safeTotal)*100;
+        
+        // Loans & Insurance for visual ratio (normalized to asset base just for bar, or separate)
+        // User asked for "Asset Structure" to include them. 
+        // Let's create a combined view: Assets (100%) vs Loans/Ins relative size
+        // Actually, to fit them into one bar, we need to sum everything.
+        const totalLoanAmount = loans.reduce((acc,l)=>acc+l.totalAmount, 0); // Approx remaining
+        const totalInsYearly = insurances.reduce((acc,i)=>acc+(i.freq===12?i.amount:i.amount*12), 0); // Annual premium as proxy size
+        
+        const grandTotal = totalAssetsTWD + totalLoanAmount + totalInsYearly;
+        const safeGrand = grandTotal > 0 ? grandTotal : 1;
+        
+        const rStock = (totalStockValueTWD / safeGrand)*100;
+        const rCash = (appState.cash / safeGrand)*100;
+        const rFixed = (appState.fixed / safeGrand)*100;
+        const rLoan = (totalLoanAmount / safeGrand)*100;
+        const rIns = (totalInsYearly / safeGrand)*100;
+
+        const pBar = document.getElementById('allocProgressBar');
+        pBar.children[0].style.width = `${rStock}%`;
+        pBar.children[1].style.width = `${rCash}%`;
+        pBar.children[2].style.width = `${rFixed}%`;
+        pBar.children[3].style.width = `${rLoan}%`;
+        pBar.children[4].style.width = `${rIns}%`;
+        
+        document.getElementById('allocPercentText').innerText = `總規模 ${formatCurrency(grandTotal)}`;
+    }
+
+    function drawChart(projection) {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: projection.labels,
+                datasets: [
+                    { label: '目標', data: new Array(projection.labels.length).fill(appState.target), borderColor: '#dc3545', borderDash: [5,5], pointRadius: 0, fill: false },
+                    { label: '流動', data: projection.liquid, borderColor: '#0d6efd', backgroundColor: 'rgba(13, 110, 253, 0.2)', fill: true, tension: 0.4 },
+                    { label: '固定', data: projection.fixed, borderColor: '#198754', backgroundColor: 'rgba(25, 135, 84, 0.2)', fill: true, tension: 0.1 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { stacked: true } } }
+        });
+    }
+
+    function formatCurrency(n) {
+        return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(n);
+    }
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AssetGuardian | 智慧資產管家 V6.6.2</title>
+    <title>AssetGuardian | 智慧資產管家 V7.0</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap JS -->
@@ -98,7 +98,7 @@
 <nav class="navbar navbar-light mb-4 sticky-top">
     <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold" href="#">
-            <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian <span class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V6.6.2</span>
+            <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian <span class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V7.0 年度回顧</span>
         </a>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="openStockModal()">
@@ -189,7 +189,6 @@
                 <div class="p-4 border-bottom">
                     <h6 class="fw-bold text-secondary mb-3">月底結算 (變動花費)</h6>
                     
-                    <!-- NEW: Explicit Available Calculation -->
                     <div class="alert alert-success border mb-3">
                         <div class="small text-success text-center mb-1">扣除投資與固定開銷後</div>
                         <div class="text-center">
@@ -230,7 +229,7 @@
         <div class="col-lg-4">
             <div class="dashboard-card">
                 <div class="p-3 border-bottom bg-white">
-                    <h6 class="fw-bold mb-0">資產成長預測 (折線分析)</h6>
+                    <h6 class="fw-bold mb-0">今年資產走勢 (歷史統計)</h6>
                 </div>
                 <div class="p-3">
                     <canvas id="growthChart" height="250"></canvas>
@@ -671,21 +670,79 @@
         const recEl = document.getElementById('historyTableBody');
         if(recEl) { recEl.innerHTML=''; recReq.sort((a,b)=>b.id-a.id).forEach(r=>{ recEl.innerHTML+=`<tr><td>${r.date}</td><td>${formatCurrency(r.spend)}</td><td><span class="badge ${r.status==='bad'?'bg-danger':'bg-success'}">${r.msg}</span></td></tr>`; }); }
 
-        // Chart (Line, Non-Stacked)
-        const labels=[], dataL=[], dataF=[];
-        let cL=liquid, cF=appState.fixed;
-        for(let k=0; k<=12; k++) {
-            labels.push(k===0?'Now':`M${k}`);
-            dataL.push(cL); dataF.push(cF);
-            if(k>0) cL+=est;
+        // Chart V7.0 Logic: Historical Review (Actual Data from Records)
+        // Need to reconstruct asset history based on records
+        // Concept: Start with Current Total Assets. Go back month by month.
+        // Asset[PrevMonth] = Asset[CurrentMonth] - AssetChange[CurrentMonth]
+        
+        const chartLabels = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        const chartData = new Array(12).fill(null); // Values for 12 months
+        
+        const currentMonthIdx = new Date().getMonth(); // 0-11
+        let runningAsset = total; // Current total assets
+        
+        // Fill current month
+        chartData[currentMonthIdx] = runningAsset;
+        
+        // Group records by month (simplified: assumes records are from this year)
+        // We need to subtract changes to find previous months' ending balance.
+        // Filter records for this year
+        const currentYear = new Date().getFullYear();
+        const yearRecords = recReq.filter(r => {
+            const d = new Date(r.date);
+            return d.getFullYear() === currentYear;
+        });
+        
+        // Calculate backwards from current month
+        for (let m = currentMonthIdx; m > 0; m--) {
+            // Find records that happened in month 'm'
+            // To get Month M-1 balance, we subtract the changes that happened in Month M
+            // Wait, records store 'date'. If I am at end of Feb (m=1), Asset is X.
+            // Records in Feb contributed to this X. 
+            // So Jan End Asset = Feb End Asset - (Sum of Feb AssetChanges).
+            
+            const monthRecords = yearRecords.filter(r => new Date(r.date).getMonth() === m);
+            const monthlyChange = monthRecords.reduce((sum, r) => sum + r.assetChange, 0);
+            
+            // Previous month balance
+            runningAsset -= monthlyChange;
+            chartData[m-1] = runningAsset;
         }
+        
+        // Note: Future months remain null (don't show line)
         
         const ctx = document.getElementById('growthChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
         chartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{label:'流動資產', data:dataL, borderColor:'#0d6efd', tension:0.4, fill:false}, {label:'固定資產', data:dataF, borderColor:'#198754', tension:0.1, fill:false}] },
-            options: { responsive:true, maintainAspectRatio:false, scales:{y:{stacked:false}} }
+            data: { 
+                labels: chartLabels, 
+                datasets: [
+                    { 
+                        label: '實際總資產', 
+                        data: chartData, 
+                        borderColor: '#0d6efd', 
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.3, 
+                        fill: true,
+                        spanGaps: true // Connect points if gaps
+                    }, 
+                    { 
+                        label: '目標線', 
+                        data: new Array(12).fill(appState.target), 
+                        borderColor: '#dc3545', 
+                        borderDash: [5,5], 
+                        tension: 0, 
+                        fill: false,
+                        pointRadius: 0
+                    }
+                ] 
+            },
+            options: { 
+                responsive:true, 
+                maintainAspectRatio:false, 
+                scales:{y:{stacked:false}} 
+            }
         });
 
         // Asset Bar (Only 3: Stock, Cash, Fixed)

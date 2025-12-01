@@ -867,7 +867,15 @@
                 if (box.style.display === 'block') {
                     box.style.display = 'none';
                 } else {
-                    const totalLoans = loans.reduce((acc, l) => acc + l.monthlyPayment, 0);
+                    // 只計算正在還款中的貸款
+                    const now = new Date();
+                    const activeLoans = loans.filter(l => {
+                        if (!l.startDate || !l.endDate) return true; // 若資料不完整則預設計入
+                        const start = new Date(l.startDate);
+                        const end = new Date(l.endDate);
+                        return start <= now && now <= end;
+                    });
+                    const totalLoans = activeLoans.reduce((acc, l) => acc + l.monthlyPayment, 0);
                     const totalSubs = subscriptions.reduce((acc, s) => acc + s.amount, 0);
                     const totalIns = insurances.reduce((acc, i) => acc + (i.freq === 12 ? i.amount / 12 : i.amount), 0);
                     const total = totalLoans + totalSubs + totalIns;
@@ -1008,8 +1016,16 @@
             setText('dispInvestTarget', formatCurrency(Math.floor(inc * (investRatio / 100))));
             setText('dispInvestRatio', `依照收入占比 ${investRatio}%`); // Fix label
 
+            // 固定扣款只計算正在還款中的貸款
+            const now = new Date();
+            const activeLoans = loans.filter(l => {
+                if (!l.startDate || !l.endDate) return true;
+                const start = new Date(l.startDate);
+                const end = new Date(l.endDate);
+                return start <= now && now <= end;
+            });
+            const l = activeLoans.reduce((a, b) => a + b.monthlyPayment, 0);
             const s = subscriptions.reduce((a, b) => a + b.amount, 0);
-            const l = loans.reduce((a, b) => a + b.monthlyPayment, 0);
             const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
 
             const netB = Math.max(0, appState.currentBudget - s - i);

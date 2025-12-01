@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AssetGuardian | 智慧資產管家 V6.4.2</title>
+    <title>AssetGuardian | 智慧資產管家 V6.5.1</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap JS -->
@@ -16,8 +16,9 @@
     <style>
         :root {
             --bg-body: #f0f2f5;
-            --primary-color: #2c3e50;
-            --accent-color: #0d6efd;
+            --primary-color: #2c3e50; /* Main Text Color */
+            --theme-color: #2c3e50;   /* Unified Theme Color */
+            --theme-color-hover: #1a252f;
             --stock-up: #e63946;
             --stock-down: #2a9d8f;
         }
@@ -30,6 +31,16 @@
         
         .navbar { background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
+        /* Bootstrap Overrides for Theme Color */
+        .text-primary { color: var(--theme-color) !important; }
+        .bg-primary { background-color: var(--theme-color) !important; }
+        .btn-primary { background-color: var(--theme-color); border-color: var(--theme-color); }
+        .btn-primary:hover, .btn-primary:active, .btn-primary:focus { background-color: var(--theme-color-hover); border-color: var(--theme-color-hover); }
+        .btn-outline-primary { color: var(--theme-color); border-color: var(--theme-color); }
+        .btn-outline-primary:hover { background-color: var(--theme-color); color: white; border-color: var(--theme-color); }
+        .nav-pills .nav-link.active { background-color: var(--theme-color); }
+        .progress-bar.bg-primary { background-color: var(--theme-color) !important; }
+
         /* KPI Card */
         .kpi-card {
             background: #fff; border-radius: 12px; padding: 20px; border: none;
@@ -39,14 +50,14 @@
         .kpi-value { font-size: 1.8rem; font-weight: 800; color: #212529; margin-top: 5px; }
         .kpi-sub { font-size: 0.85rem; margin-top: 5px; font-weight: 500; }
         .kpi-card::before { content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 4px; border-radius: 0 4px 4px 0; background: #ccc; }
-        .kpi-blue::before { background: #0d6efd; }
+        .kpi-blue::before { background: var(--theme-color); }
         .kpi-green::before { background: #198754; }
         .kpi-orange::before { background: #fd7e14; }
         .kpi-red::before { background: #dc3545; }
 
         /* Dashboard Cards */
         .dashboard-card { background: #fff; border-radius: 16px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; height: 100%; }
-        .card-header-gradient { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; padding: 20px; }
+        .card-header-gradient { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 20px; }
         
         /* Table Styles */
         .table-custom th { background-color: #f8f9fa; font-size: 0.85rem; text-transform: uppercase; color: #666; border:none; padding: 12px;}
@@ -58,14 +69,14 @@
         .btn-icon { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; border: none; }
         .btn-delete { color: #dc3545; background: #fff5f5; }
         .btn-delete:hover { background: #dc3545; color: white; }
-        .btn-refresh { color: #0d6efd; background: #e7f1ff; }
-        .btn-refresh:hover { background: #0d6efd; color: white; }
+        .btn-refresh { color: var(--theme-color); background: #eef2f5; }
+        .btn-refresh:hover { background: var(--theme-color); color: white; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
         /* Settings Modal Styles */
         .nav-pills .nav-link { color: #555; border-radius: 8px; margin-bottom: 5px; text-align: left; padding: 12px 15px; }
-        .nav-pills .nav-link.active { background-color: var(--primary-color); color: white; }
+        .nav-pills .nav-link.active { background-color: var(--theme-color); color: white; }
         .nav-pills .nav-link i { width: 25px; text-align: center; margin-right: 5px; }
         
         /* Allocation Bar */
@@ -73,7 +84,7 @@
         .alloc-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: white; font-weight: bold; transition: width 0.3s; }
 
         .sub-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 0.95rem; background: white; margin-bottom: 5px; border-radius: 6px;}
-        .loan-item { background-color: #f8f9fa; border-left: 4px solid #0d6efd; }
+        .loan-item { background-color: #f8f9fa; border-left: 4px solid var(--theme-color); }
         .ins-item { background-color: #fffbf0; border-left: 4px solid #ffc107; }
     </style>
 </head>
@@ -82,7 +93,7 @@
 <nav class="navbar navbar-light mb-4 sticky-top">
     <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold" href="#">
-            <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian <span class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V6.4.2</span>
+            <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian <span class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V6.5.1</span>
         </a>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="openStockModal()">
@@ -390,6 +401,22 @@
                             <div class="tab-pane fade" id="content-system">
                                 <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">系統設定</h6>
                                 <div class="mb-3 form-check form-switch"><input class="form-check-input" type="checkbox" id="strategyToggle"><label class="form-check-label fw-bold" for="strategyToggle">彈性模式</label></div>
+                                
+                                <h6 class="fw-bold mb-3 text-primary border-bottom pb-2 mt-4">資料備份與還原</h6>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-primary w-100" onclick="exportData()">
+                                            <i class="fas fa-file-export me-1"></i> 匯出 (JSON)
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-success w-100" onclick="document.getElementById('inpImportFile').click()">
+                                            <i class="fas fa-file-import me-1"></i> 匯入
+                                        </button>
+                                        <input type="file" id="inpImportFile" style="display:none" accept=".json" onchange="importData(this)">
+                                    </div>
+                                </div>
+
                                 <hr>
                                 <button type="button" class="btn btn-outline-danger w-100" onclick="clearDB()"><i class="fas fa-trash-alt me-2"></i> 重置所有資料</button>
                             </div>
@@ -487,6 +514,64 @@
 
     const getStore = (name, mode='readonly') => db.transaction([name], mode).objectStore(name);
 
+    // --- Import / Export Logic (V6.5) ---
+    async function exportData() {
+        const stores = ['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'];
+        const exportObj = {};
+        
+        const tx = db.transaction(stores, 'readonly');
+        for (const storeName of stores) {
+            const req = tx.objectStore(storeName).getAll();
+            exportObj[storeName] = await new Promise(r => req.onsuccess = () => r(req.result));
+        }
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "AssetGuardian_Backup_" + new Date().toISOString().split('T')[0] + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    async function importData(input) {
+        const file = input.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!confirm("匯入將會覆蓋現有所有資料，確定執行？")) {
+                    input.value = '';
+                    return;
+                }
+                
+                const stores = ['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'];
+                const tx = db.transaction(stores, 'readwrite');
+                
+                for (const storeName of stores) {
+                    if (data[storeName]) {
+                        const store = tx.objectStore(storeName);
+                        await new Promise(r => store.clear().onsuccess = r);
+                        for (const item of data[storeName]) {
+                            store.add(item);
+                        }
+                    }
+                }
+                
+                tx.oncomplete = () => {
+                    alert("匯入成功！系統將重新整理。");
+                    location.reload();
+                };
+            } catch (err) {
+                console.error(err);
+                alert("匯入失敗：檔案格式錯誤");
+            }
+        };
+        reader.readAsText(file);
+    }
+
     // --- Core Logic ---
     function calcAllocations() {
         const active = parseFloat(document.getElementById('inpActive').value) || 0;
@@ -505,7 +590,6 @@
         setText('calcMaxSpend', formatCurrency(maxSpend));
         setText('calcTargetInvest', formatCurrency(targetInvest));
 
-        // Loan DBR
         const safeLoan = Math.floor(totalIncome * 0.3);
         setText('calcSafeLoan30', formatCurrency(safeLoan));
         
@@ -615,7 +699,7 @@
         renderDashboard();
     }
 
-    // --- Chart Projection (12 Months) ---
+    // --- Chart Projection ---
     function calculateAssetCurve(monthsToProject) {
         let totalStockVal = stocks.reduce((sum, s) => {
             const isTw = s.symbol.toUpperCase().includes('.TW');

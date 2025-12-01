@@ -1108,12 +1108,220 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+
+                    function calcLoanDetails() { const t = parseFloat(document.getElementById('inpLoanTotal').value) || 0; const r = parseFloat(document.getElementById('inpLoanRate').value) || 0; const m = parseInt(document.getElementById('inpLoanMonths').value) || 0; let p = 0; if(t > 0 && m > 0) { if (r === 0) p = t / m; else { const i = r / 100 / 12; p = t * (i * Math.pow(1 + i, m)) / (Math.pow(1 + i, m) - 1) } } document.getElementById('inpLoanMonthly').value = p; setText('txtLoanMonthly', formatCurrency(Math.round(p))); if (document.getElementById('inpLoanStart').value && m > 0) { const d = new Date(document.getElementById('inpLoanStart').value); d.setMonth(d.getMonth() + m); document.getElementById('inpLoanEnd').value = d.toISOString().split('T')[0] }
+        }
+        async function addLoan() { const c = document.getElementById('inpLoanCat').value; const n = document.getElementById('inpLoanName').value; const t = parseFloat(document.getElementById('inpLoanTotal').value); const r = parseFloat(document.getElementById('inpLoanRate').value); const s = document.getElementById('inpLoanStart').value; const e = document.getElementById('inpLoanEnd').value; const m = parseFloat(document.getElementById('inpLoanMonthly').value); if (!n || isNaN(m)) return; await new Promise(x => getStore('loans', 'readwrite').add({ category: c, name: n, totalAmount: t, rate: r, startDate: s, endDate: e, monthlyPayment: m }).onsuccess = x); await refreshLoans(); document.getElementById('inpLoanName').value = '' }
+        async function deleteLoan(id) { if (confirm("刪除?")) await new Promise(x => getStore('loans', 'readwrite').delete(id).onsuccess = x); await refreshLoans() }
+        async function refreshLoans() { loans = await new Promise(x => getStore('loans').getAll().onsuccess = e => x(e.target.result)); const el = document.getElementById('loanList'); el.innerHTML = ''; let t = 0; loans.forEach(l => { t += l.monthlyPayment; el.innerHTML += `<div class="sub-item loan-item mb-2 rounded"><div><span class="badge bg-secondary me-2">${l.category}</span><span class="fw-bold">${l.name}</span></div><button class="btn btn-sm text-danger" onclick="deleteLoan(${l.id})"><i class="fas fa-trash-alt"></i></button></div>` }); setText('totalLoanPayment', formatCurrency(t)); calcAllocations(); renderDashboard() }
+
+        async function addSubscription() { const n = document.getElementById('inpSubName').value; const a = parseFloat(document.getElementById('inpSubAmount').value); if (!n || isNaN(a)) return; await new Promise(x => getStore('subscriptions', 'readwrite').add({ name: n, amount: a }).onsuccess = x); document.getElementById('inpSubName').value = ''; document.getElementById('inpSubAmount').value = ''; await refreshSubscriptions() }
+        async function removeSubscription(id) { await new Promise(x => getStore('subscriptions', 'readwrite').delete(id).onsuccess = x); await refreshSubscriptions() }
+        async function refreshSubscriptions() { subscriptions = await new Promise(x => getStore('subscriptions').getAll().onsuccess = e => x(e.target.result)); const el = document.getElementById('subsList'); el.innerHTML = ''; let t = 0; subscriptions.forEach(s => { t += s.amount; el.innerHTML += `<div class="sub-item shadow-sm border-0"><span>${s.name} ($${s.amount})</span><button class="btn btn-sm text-danger" onclick="removeSubscription(${s.id})"><i class="fas fa-trash-alt"></i></button></div>` }); setText('totalSubsDisplay', formatCurrency(t)) }
+
+        async function addStock() { const s = document.getElementById('inpStockSymbol').value; const c = parseFloat(document.getElementById('inpStockCost').value); const h = parseFloat(document.getElementById('inpStockShares').value); if (!s) return; await new Promise(x => getStore('stocks', 'readwrite').add({ symbol: s, cost: c, shares: h, currentPrice: c, lastUpdate: Date.now() }).onsuccess = x); stockModal.hide(); await loadData(); refreshStockPrices() }
+        async function deleteStock(id) { if (confirm("刪除?")) await new Promise(x => getStore('stocks', 'readwrite').delete(id).onsuccess = x); loadData().then(renderDashboard) }
+        async function fetchStockPrice(symbol) {
+            try {
+                // Yahoo Finance API via CORS Proxy
+                // Note: Using a public proxy. If it fails, check corsproxy.io status.
+                const proxy = "https://corsproxy.io/?";
+                const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d`;
+                const res = await fetch(proxy + encodeURIComponent(url));
+                const json = await res.json();
+
+                if (json.chart && json.chart.result && json.chart.result.length > 0) {
+                    const meta = json.chart.result[0].meta;
+                    // Prioritize regularMarketPrice, fallback to previousClose
+                    return meta.regularMarketPrice || meta.chartPreviousClose;
+                }
+                return null;
+            } catch (e) {
+                console.error("Stock fetch error:", symbol, e);
+                return null;
+            }
+        }
+
+        async function refreshStockPrices() {
+            const btn = document.getElementById('btnRefreshStocks');
+            const icon = document.getElementById('iconRefresh');
+
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('spin');
+
+            // 1. Get latest list from DB
+            stocks = await new Promise(x => getStore('stocks').getAll().onsuccess = e => x(e.target.result));
+
+            // 2. Fetch updates in parallel
+            const updates = stocks.map(async (s) => {
+                const price = await fetchStockPrice(s.symbol);
+                if (price !== null) {
+                    s.currentPrice = price;
+                    s.lastUpdate = Date.now();
+                    // Update individual stock in DB
+                    await new Promise(r => getStore('stocks', 'readwrite').put(s).onsuccess = r);
+                }
+            });
+
+            await Promise.all(updates);
+
+            // 3. Reload updated data to ensure consistency
+            stocks = await new Promise(x => getStore('stocks').getAll().onsuccess = e => x(e.target.result));
+
+            renderDashboard();
+
+            if (btn) btn.disabled = false;
+            if (icon) icon.classList.remove('spin');
+            setText('lastUpdateStats', new Date().toLocaleTimeString());
+        }
+
+        async function loadData() { const s = await new Promise(x => getStore('settings').get('main_config').onsuccess = e => x(e.target.result)); if (s) appState = { ...defaultState, ...s.data }; stocks = await new Promise(x => getStore('stocks').getAll().onsuccess = e => x(e.target.result)); await refreshSubscriptions(); await refreshInsurance(); await refreshLoans() }
+        async function saveSettings() { appState.cash = parseFloat(document.getElementById('inpCash').value) || 0; appState.fixed = parseFloat(document.getElementById('inpFixed').value) || 0; appState.active = parseFloat(document.getElementById('inpActive').value) || 0; appState.passive = parseFloat(document.getElementById('inpPassive').value) || 0; appState.target = parseFloat(document.getElementById('inpTarget').value) || 0; appState.baseBudget = parseFloat(document.getElementById('inpBaseBudget').value) || 0; appState.ratioLiving = parseInt(document.getElementById('rngRatioLiving').value); appState.ratioInvest = parseInt(document.getElementById('rngRatioInvest').value); appState.strategy = document.getElementById('strategyToggle').checked ? 'flexible' : 'strict'; appState.isSetup = true; if (appState.currentBudget === defaultState.currentBudget && !appState.isSetup) appState.currentBudget = appState.baseBudget; await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); settingsModal.hide(); renderDashboard() }
+        async function settleMonth() { const v = parseFloat(document.getElementById('inpMonthSpend').value); if (isNaN(v)) { alert("金額?"); return } const s = subscriptions.reduce((a, b) => a + b.amount, 0); const l = loans.reduce((a, b) => a + b.monthlyPayment, 0); const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0); const out = v + s + l + i; const inc = appState.active + appState.passive; const sav = inc - out; appState.cash += sav; const netB = Math.max(0, appState.currentBudget - s - i); const d = v - netB; await new Promise(x => getStore('records', 'readwrite').add({ date: new Date().toLocaleDateString(), spend: v, diff: d, status: d > 0 ? 'bad' : 'good', msg: d > 0 ? '超支' : '結餘', assetChange: sav }).onsuccess = x); await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); document.getElementById('inpMonthSpend').value = ''; renderDashboard() }
+        async function deleteRecord(id, c) { if (confirm("刪?")) { appState.cash -= c; await new Promise(x => getStore('records', 'readwrite').delete(id).onsuccess = x); await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); renderDashboard() } }
+        async function clearDB() { if (!confirm("清空?")) return; const tx = db.transaction(['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'], 'readwrite');['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'].forEach(s => tx.objectStore(s).clear()); tx.oncomplete = () => location.reload() }
+
+        // --- Render ---
+        async function renderDashboard() {
+            let sv = 0, cv = 0;
+            const el = document.getElementById('stockTableBody'); if (el) el.innerHTML = '';
+            stocks.forEach(s => {
+                const r = s.symbol.includes('.TW') ? 1 : usdTwdRate;
+                const v = s.currentPrice * s.shares * r; const c = s.cost * s.shares * r; sv += v; cv += c;
+                const pnl = v - c; const pp = c > 0 ? (pnl / c) * 100 : 0; const cls = pnl >= 0 ? 'text-up' : 'text-down'; const ico = pnl >= 0 ? 'fa-caret-up' : 'fa-caret-down';
+                if (el) el.innerHTML += `<tr><td><div class="fw-bold">${s.symbol}</div><small class="text-muted">${s.shares}股</small></td><td class="text-end"><div class="fw-bold">${s.symbol.includes('.TW') ? 'NT$' : 'US$'} ${s.currentPrice.toFixed(2)}</div><small class="text-muted">均 ${s.cost}</small></td><td class="text-end"><div>NT$ ${formatCurrency(v)}</div><small class="${cls}"><i class="fas ${ico}"></i> NT$ ${formatCurrency(pnl)} (${pp.toFixed(1)}%)</small></td><td class="text-center"><button class="btn-icon btn-delete" onclick="deleteStock(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+            setText('totalStockValue', formatCurrency(sv));
+            const liquid = appState.cash + sv; const total = liquid + appState.fixed;
+            setText('dispTotalAssets', formatCurrency(total));
+
+            const pnlT = sv - cv; const ps = pnlT >= 0 ? '+' : '';
+            setText('dispTotalAssetsSub', `含現金 ${formatCurrency(appState.cash)} 及股票損益 ${ps}${formatCurrency(pnlT)}`);
+
+            // FIX 1: Use appState.ratioInvest which is updated by settings
+            const inc = appState.active + appState.passive;
+            const investRatio = appState.ratioInvest || 30; // Default if missing
+            setText('dispInvestTarget', formatCurrency(Math.floor(inc * (investRatio / 100))));
+            setText('dispInvestRatio', `依照收入占比 ${investRatio}%`); // Fix label
+
+            const s = subscriptions.reduce((a, b) => a + b.amount, 0);
+            const l = loans.reduce((a, b) => a + b.monthlyPayment, 0);
+            const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
+
+            const netB = Math.max(0, appState.currentBudget - s - i);
+            setText('dispCurrentBudget', formatCurrency(netB));
+            setText('lblFixedMonthly', formatCurrency(s + l + i));
+
+            // FIX 2: Calculate "Net Available" for Variable Spending
+            // Formula: Income - Suggested Investment - Fixed Costs (Loans + Subs + Ins)
+            // Note: appState.currentBudget usually derives from (Income * LivingRatio).
+            // Let's stick to user request: Income - InvestTarget - FixedCosts
+            const investTarget = Math.floor(inc * (investRatio / 100));
+            const totalFixed = s + l + i;
+            const realAvailable = Math.max(0, inc - investTarget - totalFixed);
+            setText('dispRealAvailable', formatCurrency(realAvailable));
+
+            // Date Projection
+            const gap = appState.target - total;
+            const est = inc - appState.currentBudget - l;
+            const daysEl = document.getElementById('dispDays');
+            if (gap <= 0) daysEl.innerText = "已達成";
+            else if (est <= 0) daysEl.innerText = "無限期";
+            else daysEl.innerText = Math.ceil((gap / est) * 30).toLocaleString() + " 天";
+
+            const recReq = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result));
+            const recEl = document.getElementById('historyTableBody');
+            if (recEl) { recEl.innerHTML = ''; recReq.sort((a, b) => b.id - a.id).forEach(r => { recEl.innerHTML += `<tr><td>${r.date}</td><td>${formatCurrency(r.spend)}</td><td><span class="badge ${r.status === 'bad' ? 'bg-danger' : 'bg-success'}">${r.msg}</span></td></tr>`; }); }
+
+            // Chart V7.0 Logic: Historical Review (Actual Data from Records)
+            // Need to reconstruct asset history based on records
+            // Concept: Start with Current Total Assets. Go back month by month.
+            // Asset[PrevMonth] = Asset[CurrentMonth] - AssetChange[CurrentMonth]
+
+            const chartLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            const chartData = new Array(12).fill(null); // Values for 12 months
+
+            const currentMonthIdx = new Date().getMonth(); // 0-11
+            let runningAsset = total; // Current total assets
+
+            // Fill current month
+            chartData[currentMonthIdx] = runningAsset;
+
+            // Group records by month (simplified: assumes records are from this year)
+            // We need to subtract changes to find previous months' ending balance.
+            // To get Month M-1 balance, we subtract the changes that happened in Month M
+            // So Jan End Asset = Feb End Asset - (Sum of Feb AssetChanges).
+
+            const currentYear = new Date().getFullYear();
+            const yearRecords = recReq.filter(r => {
+                const d = new Date(r.date);
+                return d.getFullYear() === currentYear;
+            });
+
+            // Calculate backwards from current month
+            for (let m = currentMonthIdx; m > 0; m--) {
+                // Find records that happened in month 'm'
+                const monthRecords = yearRecords.filter(r => new Date(r.date).getMonth() === m);
+                const monthlyChange = monthRecords.reduce((sum, r) => sum + r.assetChange, 0);
+
+                // Previous month balance
+                runningAsset -= monthlyChange;
+                chartData[m - 1] = runningAsset;
+            }
+
+            // Note: Future months remain null (don't show line)
+
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: '實際總資產',
+                            data: chartData,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            spanGaps: true // Connect points if gaps
+                        },
+                        {
+                            label: '目標線',
+                            data: new Array(12).fill(appState.target),
+                            borderColor: '#dc3545',
+                            borderDash: [5, 5],
+                            tension: 0,
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     scales: { y: { stacked: false } }
                 }
             });
 
             // Asset Bar (Only 3: Stock, Cash, Fixed)
             const grand = total > 0 ? total : 1;
+            const pS = (sv / grand) * 100, pC = (appState.cash / grand) * 100, pF = (appState.fixed / grand) * 100;
+            const pBar = document.getElementById('allocProgressBar');
+            if (pBar) pBar.innerHTML = `<div class="progress-bar bg-primary" style="width:${pS}%" title="股票"></div><div class="progress-bar bg-info" style="width:${pC}%" title="現金"></div><div class="progress-bar bg-success" style="width:${pF}%" title="固定"></div>`;
+            setText('allocPercentText', `規模 ${formatCurrency(total)}`);
+
+            // Debt Bar
+            const debt = loans.reduce((a, b) => a + b.totalAmount, 0);
+            const net = total - debt;
+            setText('valTotalAssets', formatCurrency(total));
+            setText('valTotalLiabilities', formatCurrency(debt));
+            setText('valNetWorth', formatCurrency(net));
+            const dr = total > 0 ? (debt / total) * 100 : 0;
+            const dBar = document.getElementById('debtProgressBar');
+            if (dBar) dBar.innerHTML = `<div class="progress-bar bg-danger" style="width:${Math.min(100, dr)}%" title="負債"></div><div class="progress-bar bg-secondary bg-opacity-25" style="width:${Math.max(0, 100 - dr)}%" title="淨值"></div>`;
+            setText('debtRatioText', `負債比 ${dr.toFixed(1)}%`);
         }
 
         function formatCurrency(n) { return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(n); }

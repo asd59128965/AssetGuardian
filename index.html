@@ -1112,8 +1112,46 @@
                 }
             });
 
-            // Asset Bar (Only 3: Stock, Cash, Fixed)
+            // Asset Bar (Only 3: Stock, Cash)
             const grand = total > 0 ? total : 1;
+
+            // Calculate allocation percentages (stocks, cash, fixed)
+            const stockPct = Math.round((sv / grand) * 100);
+            const cashPct = Math.round((appState.cash / grand) * 100);
+            // Ensure percentages sum to 100 (avoid rounding gaps)
+            const fixedPct = Math.max(0, 100 - stockPct - cashPct);
+
+            const allocBar = document.getElementById('allocProgressBar');
+            if (allocBar) {
+                const bars = allocBar.querySelectorAll('.progress-bar');
+                if (bars[0]) bars[0].style.width = stockPct + '%';
+                if (bars[1]) bars[1].style.width = cashPct + '%';
+                if (bars[2]) bars[2].style.width = fixedPct + '%';
+            }
+            setText('allocPercentText', `股票 ${stockPct}% · 現金 ${cashPct}% · 固定 ${fixedPct}%`);
+
+            // Calculate liabilities (use stored totalAmount for loans) and net worth
+            const totalLiabilities = loans.reduce((acc, l) => acc + (l.totalAmount || 0), 0);
+            const netWorth = total - totalLiabilities;
+
+            // Update small summary boxes
+            setText('valTotalAssets', formatCurrency(total));
+            setText('valTotalLiabilities', formatCurrency(totalLiabilities));
+            setText('valNetWorth', formatCurrency(netWorth));
+
+            // Update debt progress (loan vs net asset)
+            const debtBar = document.getElementById('debtProgressBar');
+            const debtBase = Math.max(1, totalLiabilities + Math.max(0, netWorth));
+            const loanWidth = Math.round((totalLiabilities / debtBase) * 100);
+            const netWidth = Math.max(0, 100 - loanWidth);
+            if (debtBar) {
+                const dbars = debtBar.querySelectorAll('.progress-bar');
+                if (dbars[0]) dbars[0].style.width = loanWidth + '%';
+                if (dbars[1]) dbars[1].style.width = netWidth + '%';
+            }
+
+            const debtPercentLabel = Math.round((totalLiabilities / Math.max(1, total)) * 100);
+            setText('debtRatioText', `${debtPercentLabel}%`);
         }
 
         function formatCurrency(n) { return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(n); }

@@ -912,24 +912,68 @@
 
     async function renderDashboard() {
         let totalStockValueTWD = 0;
+        // 新增總成本變數，用於計算整體報酬率 (如果未來需要)
+        let totalCostTWD = 0; 
+
         const stockTbody = document.getElementById('stockTableBody');
         if(stockTbody) stockTbody.innerHTML = '';
+        
         stocks.forEach(s => {
             const isTw = s.symbol.toUpperCase().includes('.TW');
             const rate = isTw ? 1 : usdTwdRate;
+            const currencySym = isTw ? 'NT$' : 'US$';
+
+            // 計算個別股票數據
             const valOrigin = s.currentPrice * s.shares;
+            const costValOrigin = s.cost * s.shares;
+            const pnlOrigin = valOrigin - costValOrigin;
+            const pnlPercent = costValOrigin > 0 ? (pnlOrigin / costValOrigin) * 100 : 0;
+            
+            // 累加總值
             totalStockValueTWD += (valOrigin * rate);
+            totalCostTWD += (costValOrigin * rate);
+
+            // 決定顏色與圖示
+            const colorClass = pnlOrigin >= 0 ? 'text-up' : 'text-down';
+            const iconClass = pnlOrigin >= 0 ? 'fa-caret-up' : 'fa-caret-down';
+
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td><div class="fw-bold">${s.symbol}</div></td><td class="text-end">${s.currentPrice.toFixed(2)}</td><td class="text-end">${(valOrigin*rate).toFixed(0)}</td><td class="text-center"><button class="btn-icon btn-delete" onclick="deleteStock(${s.id})"><i class="fas fa-trash"></i></button></td>`;
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-bold">${s.symbol}</div>
+                    <small class="text-muted">${s.shares}股</small>
+                </td>
+                <td class="text-end">
+                    <div class="fw-bold">${currencySym} ${s.currentPrice.toFixed(2)}</div>
+                    <small class="text-muted">均 ${s.cost}</small>
+                </td>
+                <td class="text-end">
+                    <div>NT$ ${(valOrigin*rate).toLocaleString(undefined, {maximumFractionDigits:0})}</div>
+                    <small class="${colorClass}">
+                        <i class="fas ${iconClass}"></i> NT$ ${(pnlOrigin*rate).toLocaleString(undefined, {maximumFractionDigits:0})} (${pnlPercent.toFixed(1)}%)
+                    </small>
+                </td>
+                <td class="text-center">
+                    <button class="btn-icon btn-delete" onclick="deleteStock(${s.id})"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            `;
             if(stockTbody) stockTbody.appendChild(tr);
         });
+        
         setText('totalStockValue', formatCurrency(totalStockValueTWD));
 
         const totalLiquidTWD = appState.cash + totalStockValueTWD;
         const totalAssetsTWD = totalLiquidTWD + appState.fixed;
         const gap = appState.target - totalAssetsTWD;
         setText('dispTotalAssets', formatCurrency(totalAssetsTWD));
-        setText('dispTotalAssetsSub', `含現金 ${formatCurrency(appState.cash)} + 股票`);
+        
+        // 這裡也可以把總損益顯示出來
+        const totalPnL = totalStockValueTWD - totalCostTWD;
+        const totalPnLPercent = totalCostTWD > 0 ? (totalPnL / totalCostTWD) * 100 : 0;
+        const pnlSign = totalPnL >= 0 ? '+' : '';
+        const pnlColor = totalPnL >= 0 ? 'text-up' : 'text-down';
+        
+        setText('dispTotalAssetsSub', `含現金 ${formatCurrency(appState.cash)} 及股票損益 ${pnlSign}${formatCurrency(totalPnL)}`);
 
         const totalIncome = appState.active + appState.passive;
         const investRatio = appState.ratioInvest || 30;

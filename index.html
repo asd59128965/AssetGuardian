@@ -516,6 +516,7 @@
             const file = input.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
+                try { if (!db) await initDB(); } catch (err) { console.error(err); alert("系統錯誤: 資料庫無法存取"); return; }
                 if (!confirm("匯入將覆蓋現有資料，確定？")) { input.value = ''; return; }
                 const data = JSON.parse(e.target.result);
                 const stores = ['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'];

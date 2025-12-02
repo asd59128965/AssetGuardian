@@ -78,10 +78,28 @@
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* Settings Modal Styles */
+        /* Settings Modal Styles & RWD */
         .nav-pills .nav-link { color: #555; border-radius: 8px; margin-bottom: 5px; text-align: left; padding: 12px 15px; }
         .nav-pills .nav-link.active { background-color: var(--theme-color); color: white; }
         .nav-pills .nav-link i { width: 25px; text-align: center; margin-right: 5px; }
+
+        /* RWD Layout for Settings Modal */
+        .settings-container { display: flex; height: 100%; }
+        .settings-sidebar { width: 200px; min-width: 200px; overflow-y: auto; height: 100%; border-right: 1px solid #dee2e6; padding: 1rem; }
+        .settings-content { flex-grow: 1; overflow-y: auto; height: 100%; padding: 1.5rem; }
+
+        @media (max-width: 768px) {
+            .settings-container { flex-direction: column; }
+            .settings-sidebar {
+                width: 100%; min-width: 100%; height: auto;
+                overflow-x: auto; overflow-y: hidden; /* Horizontal scroll */
+                border-right: none; border-bottom: 1px solid #dee2e6;
+                padding: 0.5rem; white-space: nowrap; background-color: #f8f9fa;
+            }
+            .settings-sidebar .nav-pills { flex-direction: row !important; flex-wrap: nowrap; }
+            .settings-sidebar .nav-link { margin-bottom: 0; margin-right: 5px; font-size: 0.9rem; padding: 8px 12px; }
+            .settings-content { padding: 1rem; }
+        }
 
         /* Allocation Bar & Sub Items */
         .sub-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 0.95rem; background: white; margin-bottom: 5px; border-radius: 6px; }
@@ -106,8 +124,8 @@
 
         .chat-window {
             position: fixed; bottom: 90px; right: 20px;
-            width: 580px; height: 550px;
-            max-width: 90vw;
+            width: 380px; height: 550px;
+            max-width: 90vw; /* Responsive width */
             background: white; border-radius: 16px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.15);
             display: none; flex-direction: column;
@@ -287,8 +305,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-0" style="overflow: hidden;">
-                    <div class="d-flex h-100">
-                        <div class="border-end p-3 h-100" style="width: 200px; min-width: 200px; overflow-y: auto;">
+                    <!-- RWD Layout Structure: settings-container -->
+                    <div class="settings-container">
+                        <!-- Left Menu / Top Menu on Mobile -->
+                        <div class="settings-sidebar">
                             <div class="nav flex-column nav-pills" id="settings-tab" role="tablist">
                                 <button class="nav-link active" id="tab-income" data-bs-toggle="pill" data-bs-target="#content-income" type="button"><i class="fas fa-bullseye"></i>收支配比</button>
                                 <button class="nav-link" id="tab-loan" data-bs-toggle="pill" data-bs-target="#content-loan" type="button"><i class="fas fa-university"></i>貸款管理</button>
@@ -299,7 +319,8 @@
                                 <button class="nav-link" id="tab-system" data-bs-toggle="pill" data-bs-target="#content-system" type="button"><i class="fas fa-cogs"></i>系統</button>
                             </div>
                         </div>
-                        <div class="p-4 flex-grow-1 h-100" style="overflow-y: auto;">
+                        <!-- Content -->
+                        <div class="settings-content">
                             <div class="tab-content" id="settings-tabContent">
                                 <!-- Income Tab -->
                                 <div class="tab-pane fade show active" id="content-income">

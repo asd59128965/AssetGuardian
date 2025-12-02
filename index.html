@@ -1676,7 +1676,7 @@
                             </td>
                             <td class="text-end">
                                 <div class="fw-bold text-dark">${formatCurrency(r.spend)}</div>
-                                <small class="text-muted">總支出</small>
+                                <small class="text-muted">變動支出</small>
                             </td>
                             <td class="text-center">
                                 <span class="badge rounded-pill ${r.status === 'bad' ? 'bg-danger' : 'bg-success'} px-3 py-2">${r.msg}</span>
@@ -1940,7 +1940,7 @@
             generateFinancialTip('history', id);
         }
 
-        async function generateFinancialTip(context = 'startup', recordId = null, force = false) {
+                async function generateFinancialTip(context = 'startup', recordId = null, force = false) {
             const apiKey = appState.apiKey;
             if (!apiKey) return;
 
@@ -1967,13 +1967,13 @@
 
             if (context === 'startup') {
                 contextData = await getFinancialContext();
-
+                
                 // Fetch Trend Data
                 try {
                     const snapshots = await new Promise(x => getStore('daily_snapshots').getAll().onsuccess = e => x(e.target.result));
                     const recent = snapshots.sort((a, b) => b.timestamp - a.timestamp).slice(0, 7).reverse();
                     if (recent.length > 1) {
-                        const trendStr = recent.map(s => `${s.date}: $${Math.round(s.totalAssets / 1000)}k`).join(', ');
+                        const trendStr = recent.map(s => `${s.date}: $${Math.round(s.totalAssets/1000)}k`).join(', ');
                         contextData += `\n\n[最近 7 天資產趨勢]: ${trendStr}`;
                     }
                 } catch (e) { console.error("Trend fetch error", e); }
@@ -1988,20 +1988,28 @@
                     const recReq = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result));
                     rec = recReq.sort((a, b) => b.id - a.id)[0]; // The one just added
                 }
-
+                
                 if (rec) {
+                    // Calculate Fixed Expenses (Estimate based on current settings)
+                    const s = subscriptions.reduce((a, b) => a + b.amount, 0);
+                    const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
+                    const l = loans.reduce((a, b) => a + b.monthlyPayment, 0); // Simplified: sum all loans
+                    const totalFixed = s + i + l;
+
                     const simpleContext = {
                         date: rec.date,
-                        monthSpend: rec.spend,
+                        variableSpend: rec.spend, // Renamed for clarity
+                        estimatedFixedSpend: totalFixed,
+                        estimatedTotalSpend: rec.spend + totalFixed,
                         status: rec.status,
                         assetChange: rec.assetChange,
                         totalAssets: appState.cash + appState.fixed, // Approx current
                         budget: appState.currentBudget
                     };
                     contextData = JSON.stringify(simpleContext);
-                    prompt = context === 'history'
-                        ? "用戶正在回顧一筆過去的月結算紀錄。請根據簡化的財務數據 (JSON) 回傳 JSON 格式：{ \"summary\": \"針對該月表現的一句話短評 (20字內)\", \"detail\": \"完整的分析與建議 (Markdown 格式)\" }。"
-                        : "用戶剛完成月結算。請根據簡化的財務數據 (JSON) 回傳 JSON 格式：{ \"summary\": \"針對本月結算結果的一句話短評 (20字內)\", \"detail\": \"完整的月結算分析與建議 (Markdown 格式)\" }。";
+                    prompt = context === 'history' 
+                        ? "用戶正在回顧一筆過去的月結算紀錄。請根據簡化的財務數據 (JSON) 回傳 JSON 格式：{ \"summary\": \"針對該月表現的一句話短評 (20字內)\", \"detail\": \"完整的分析與建議 (Markdown 格式)\" }。注意：variableSpend 是變動支出，estimatedFixedSpend 是固定支出，請基於 estimatedTotalSpend 評估。"
+                        : "用戶剛完成月結算。請根據簡化的財務數據 (JSON) 回傳 JSON 格式：{ \"summary\": \"針對本月結算結果的一句話短評 (20字內)\", \"detail\": \"完整的月結算分析與建議 (Markdown 格式)\" }。注意：variableSpend 是變動支出，estimatedFixedSpend 是固定支出，請基於 estimatedTotalSpend 評估。";
                 }
             }
 
@@ -2036,18 +2044,7 @@
 
                         // Persistence for Settlement/History
                         if ((context === 'settlement' || context === 'history') && (recordId || context === 'settlement')) {
-                            // For settlement, we might not have passed recordId explicitly in previous logic if we relied on 'last added', 
-                            // but my previous fix passed recordId.
-                            // For history, recordId is required.
-
-                            // If context is settlement and recordId is null, we need to find the last record? 
-                            // The previous logic passed recordId in settleMonth. 
-                            // So let's assume recordId is present if needed.
-
-                            // Wait, if context is settlement, I used `lastRec` in prompt gen, but for saving I need ID.
-                            // `settleMonth` passes `recordId`.
-
-                            const targetId = recordId;
+                            const targetId = recordId; 
                             if (targetId) {
                                 const tx = db.transaction(['records'], 'readwrite');
                                 const store = tx.objectStore('records');
@@ -2057,7 +2054,6 @@
                                     if (record) {
                                         record.aiTip = result;
                                         store.put(record);
-                                        // If history context, refresh dashboard to update button
                                         if (context === 'history') {
                                             renderDashboard();
                                         }

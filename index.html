@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AssetGuardian | 智慧資產管家 V7.0</title>
+    <title>AssetGuardian | 智慧資產管家 V7.0 + AI Agent</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap JS -->
@@ -13,6 +13,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         :root {
@@ -22,6 +24,7 @@
             --theme-color-hover: #1a252f;
             --stock-up: #e63946;
             --stock-down: #2a9d8f;
+            --ai-color: #2c3e50 ; /* Indigo for AI */
         }
 
         body {
@@ -37,270 +40,105 @@
         }
 
         /* Bootstrap Overrides */
-        .text-primary {
-            color: var(--theme-color) !important;
-        }
-
-        .bg-primary {
-            background-color: var(--theme-color) !important;
-        }
-
-        .btn-primary {
-            background-color: var(--theme-color);
-            border-color: var(--theme-color);
-        }
-
-        .btn-primary:hover {
-            background-color: var(--theme-color-hover);
-            border-color: var(--theme-color-hover);
-        }
-
-        .btn-outline-primary {
-            color: var(--theme-color);
-            border-color: var(--theme-color);
-        }
-
-        .btn-outline-primary:hover {
-            background-color: var(--theme-color);
-            color: white;
-        }
-
-        .nav-pills .nav-link.active {
-            background-color: var(--theme-color);
-        }
-
-        .progress-bar.bg-primary {
-            background-color: var(--theme-color) !important;
-        }
+        .text-primary { color: var(--theme-color) !important; }
+        .bg-primary { background-color: var(--theme-color) !important; }
+        .btn-primary { background-color: var(--theme-color); border-color: var(--theme-color); }
+        .btn-primary:hover { background-color: var(--theme-color-hover); border-color: var(--theme-color-hover); }
+        .btn-outline-primary { color: var(--theme-color); border-color: var(--theme-color); }
+        .btn-outline-primary:hover { background-color: var(--theme-color); color: white; }
+        .nav-pills .nav-link.active { background-color: var(--theme-color); }
+        .progress-bar.bg-primary { background-color: var(--theme-color) !important; }
 
         /* KPI Card */
         .kpi-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            border: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            height: 100%;
-            position: relative;
-            overflow: hidden;
+            background: #fff; border-radius: 12px; padding: 20px; border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03); height: 100%; position: relative; overflow: hidden;
         }
-
-        .kpi-title {
-            font-size: 0.9rem;
-            color: #6c757d;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .kpi-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #212529;
-            margin-top: 5px;
-        }
-
-        .kpi-sub {
-            font-size: 0.85rem;
-            margin-top: 5px;
-            font-weight: 500;
-        }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 15%;
-            bottom: 15%;
-            width: 4px;
-            border-radius: 0 4px 4px 0;
-            background: #ccc;
-        }
-
-        .kpi-blue::before {
-            background: var(--theme-color);
-        }
-
-        .kpi-green::before {
-            background: #198754;
-        }
-
-        .kpi-orange::before {
-            background: #fd7e14;
-        }
-
-        .kpi-red::before {
-            background: #dc3545;
-        }
+        .kpi-title { font-size: 0.9rem; color: #6c757d; font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 1.8rem; font-weight: 800; color: #212529; margin-top: 5px; }
+        .kpi-sub { font-size: 0.85rem; margin-top: 5px; font-weight: 500; }
+        .kpi-card::before { content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 4px; border-radius: 0 4px 4px 0; background: #ccc; }
+        .kpi-blue::before { background: var(--theme-color); }
+        .kpi-green::before { background: #198754; }
+        .kpi-orange::before { background: #fd7e14; }
+        .kpi-red::before { background: #dc3545; }
 
         /* Dashboard Cards */
-        .dashboard-card {
-            background: #fff;
-            border-radius: 16px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            height: 100%;
-        }
-
-        .card-header-gradient {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 20px;
-        }
+        .dashboard-card { background: #fff; border-radius: 16px; border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden; height: 100%; }
+        .card-header-gradient { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 20px; }
 
         /* Table Styles */
-        .table-custom th {
-            background-color: #f8f9fa;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            color: #666;
-            border: none;
-            padding: 12px;
-        }
-
-        .table-custom td {
-            border-bottom: 1px solid #f0f0f0;
-            vertical-align: middle;
-            font-size: 0.95rem;
-            padding: 12px;
-        }
-
-        .text-up {
-            color: var(--stock-up) !important;
-            font-weight: bold;
-        }
-
-        .text-down {
-            color: var(--stock-down) !important;
-            font-weight: bold;
-        }
-
-        .btn-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-delete {
-            color: #dc3545;
-            background: #fff5f5;
-        }
-
-        .btn-delete:hover {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-refresh {
-            color: var(--theme-color);
-            background: #eef2f5;
-        }
-
-        .btn-refresh:hover {
-            background: var(--theme-color);
-            color: white;
-        }
-
-        .spin {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+        .table-custom th { background-color: #f8f9fa; font-size: 0.85rem; text-transform: uppercase; color: #666; border: none; padding: 12px; }
+        .table-custom td { border-bottom: 1px solid #f0f0f0; vertical-align: middle; font-size: 0.95rem; padding: 12px; }
+        .text-up { color: var(--stock-up) !important; font-weight: bold; }
+        .text-down { color: var(--stock-down) !important; font-weight: bold; }
+        .btn-icon { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; border: none; }
+        .btn-delete { color: #dc3545; background: #fff5f5; }
+        .btn-delete:hover { background: #dc3545; color: white; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
         /* Settings Modal Styles */
-        .nav-pills .nav-link {
-            color: #555;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            text-align: left;
-            padding: 12px 15px;
-        }
+        .nav-pills .nav-link { color: #555; border-radius: 8px; margin-bottom: 5px; text-align: left; padding: 12px 15px; }
+        .nav-pills .nav-link.active { background-color: var(--theme-color); color: white; }
+        .nav-pills .nav-link i { width: 25px; text-align: center; margin-right: 5px; }
 
-        .nav-pills .nav-link.active {
-            background-color: var(--theme-color);
-            color: white;
-        }
+        /* Allocation Bar & Sub Items */
+        .sub-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 0.95rem; background: white; margin-bottom: 5px; border-radius: 6px; }
+        .loan-item { background-color: #f8f9fa; border-left: 4px solid var(--theme-color); }
+        .ins-item { background-color: #fffbf0; border-left: 4px solid #ffc107; }
+        .clickable-amount { cursor: pointer; border-bottom: 1px dashed #0d6efd; color: #0d6efd; transition: all 0.2s; }
+        .clickable-amount:hover { color: #0a58ca; border-bottom-style: solid; }
+        .breakdown-box { display: none; background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #e9ecef; font-size: 0.85rem; }
 
-        .nav-pills .nav-link i {
-            width: 25px;
-            text-align: center;
-            margin-right: 5px;
+        /* --- AI Chat Widget Styles --- */
+        .chat-widget-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            width: 60px; height: 60px;
+            background: #2c3e50;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 24px; cursor: pointer; z-index: 1050;
+            transition: transform 0.2s;
         }
+        .chat-widget-btn:hover { transform: scale(1.05); }
 
-        /* Allocation Bar */
-        .alloc-bar-container {
-            height: 20px;
-            background: #eee;
-            border-radius: 10px;
-            overflow: hidden;
-            display: flex;
+        .chat-window {
+            position: fixed; bottom: 90px; right: 20px;
+            width: 580px; height: 550px;
+            background: white; border-radius: 16px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+            display: none; flex-direction: column;
+            z-index: 1050; overflow: hidden;
+            border: 1px solid #e0e7ff;
         }
+        .chat-window.active { display: flex; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .alloc-segment {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            color: white;
-            font-weight: bold;
-            transition: width 0.3s;
+        .chat-header {
+            background: #2c3e50;
+            color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;
         }
-
-        .sub-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.95rem;
-            background: white;
-            margin-bottom: 5px;
-            border-radius: 6px;
+        .chat-body {
+            flex: 1; padding: 15px; overflow-y: auto; background: #f9fafb;
+            display: flex; flex-direction: column; gap: 10px;
         }
-
-        .loan-item {
-            background-color: #f8f9fa;
-            border-left: 4px solid var(--theme-color);
-        }
-
-        .ins-item {
-            background-color: #fffbf0;
-            border-left: 4px solid #ffc107;
-        }
-
-        /* Clickable Breakdown */
-        .clickable-amount {
-            cursor: pointer;
-            border-bottom: 1px dashed #0d6efd;
-            color: #0d6efd;
-            transition: all 0.2s;
-        }
-
-        .clickable-amount:hover {
-            color: #0a58ca;
-            border-bottom-style: solid;
-        }
-
-        .breakdown-box {
-            display: none;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 1px solid #e9ecef;
-            font-size: 0.85rem;
-        }
+        .chat-footer { padding: 10px; border-top: 1px solid #eee; background: white; display: flex; gap: 10px; }
+        
+        .message { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; word-wrap: break-word; }
+        .msg-user { align-self: flex-end; background: #2c3e50 ; color: white; border-bottom-right-radius: 2px; }
+        .msg-ai { align-self: flex-start; background: white; border: 1px solid #eee; color: #333; border-bottom-left-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .msg-ai ul, .msg-ai ol { padding-left: 20px; margin-bottom: 5px; }
+        .msg-ai p { margin-bottom: 8px; }
+        
+        .typing-indicator { font-size: 0.8rem; color: #888; font-style: italic; display: none; margin-left: 10px; }
+        
+        /* Markdown styles in chat */
+        .msg-ai strong { color: #2c3e50 ; }
+        .msg-ai table { width: 100%; font-size: 0.8rem; margin: 5px 0; border-collapse: collapse; }
+        .msg-ai th, .msg-ai td { border: 1px solid #ddd; padding: 4px; }
+        .msg-ai th { background: #f3f4f6; }
     </style>
 </head>
 
@@ -309,8 +147,7 @@
     <nav class="navbar navbar-light mb-4 sticky-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian <span
-                    class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V7.0 年度回顧</span>
+                <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian <span class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V7.0 + AI</span>
             </a>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="openStockModal()">
@@ -324,41 +161,12 @@
     </nav>
 
     <div class="container-fluid px-4">
-
         <!-- KPI Area -->
         <div class="row g-3 mb-4">
-            <!-- 1. 總資產 -->
-            <div class="col-md-3 col-6">
-                <div class="kpi-card kpi-blue">
-                    <div class="kpi-title">目前總資產 (TWD)</div>
-                    <div class="kpi-value" id="dispTotalAssets">$0</div>
-                    <div class="kpi-sub text-muted" id="dispTotalAssetsSub">含現金與股票市值</div>
-                </div>
-            </div>
-            <!-- 2. 可投資額度 -->
-            <div class="col-md-3 col-6">
-                <div class="kpi-card kpi-green">
-                    <div class="kpi-title">每月建議投資額</div>
-                    <div class="kpi-value text-success" id="dispInvestTarget">$0</div>
-                    <div class="kpi-sub text-muted" id="dispInvestRatio">依照收入占比 0%</div>
-                </div>
-            </div>
-            <!-- 3. 預計達成 -->
-            <div class="col-md-3 col-6">
-                <div class="kpi-card kpi-orange">
-                    <div class="kpi-title">預計達成</div>
-                    <div class="kpi-value" id="dispDays">0 <span class="fs-6 fw-normal text-muted">天</span></div>
-                    <div class="kpi-sub text-success" id="dispDate">--</div>
-                </div>
-            </div>
-            <!-- 4. 淨預算 -->
-            <div class="col-md-3 col-6">
-                <div class="kpi-card kpi-red">
-                    <div class="kpi-title">本月「淨」可用額度</div>
-                    <div class="kpi-value" id="dispCurrentBudget">$0</div>
-                    <div class="kpi-sub text-muted" id="dispBudgetNote">扣除訂閱、保險與貸款</div>
-                </div>
-            </div>
+            <div class="col-md-3 col-6"><div class="kpi-card kpi-blue"><div class="kpi-title">目前總資產 (TWD)</div><div class="kpi-value" id="dispTotalAssets">$0</div><div class="kpi-sub text-muted" id="dispTotalAssetsSub">含現金與股票市值</div></div></div>
+            <div class="col-md-3 col-6"><div class="kpi-card kpi-green"><div class="kpi-title">每月建議投資額</div><div class="kpi-value text-success" id="dispInvestTarget">$0</div><div class="kpi-sub text-muted" id="dispInvestRatio">依照收入占比 0%</div></div></div>
+            <div class="col-md-3 col-6"><div class="kpi-card kpi-orange"><div class="kpi-title">預計達成</div><div class="kpi-value" id="dispDays">0 <span class="fs-6 fw-normal text-muted">天</span></div><div class="kpi-sub text-success" id="dispDate">--</div></div></div>
+            <div class="col-md-3 col-6"><div class="kpi-card kpi-red"><div class="kpi-title">本月「淨」可用額度</div><div class="kpi-value" id="dispCurrentBudget">$0</div><div class="kpi-sub text-muted" id="dispBudgetNote">扣除訂閱、保險與貸款</div></div></div>
         </div>
 
         <div class="row g-4">
@@ -366,34 +174,18 @@
             <div class="col-lg-5">
                 <div class="dashboard-card">
                     <div class="card-header-gradient d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-1 fw-bold"><i class="fas fa-coins me-2"></i>投資組合</h5>
-                            <small class="text-white-50">匯率: <span id="dispExRate">32.0</span> (USD/TWD)</small>
-                        </div>
-                        <button class="btn btn-light btn-sm text-primary fw-bold" onclick="refreshStockPrices()"
-                            id="btnRefreshStocks">
-                            <i class="fas fa-sync-alt me-1" id="iconRefresh"></i> 更新
-                        </button>
+                        <div><h5 class="mb-1 fw-bold"><i class="fas fa-coins me-2"></i>投資組合</h5><small class="text-white-50">匯率: <span id="dispExRate">32.0</span> (USD/TWD)</small></div>
+                        <button class="btn btn-light btn-sm text-primary fw-bold" onclick="refreshStockPrices()" id="btnRefreshStocks"><i class="fas fa-sync-alt me-1" id="iconRefresh"></i> 更新</button>
                     </div>
-
-                    <div class="p-0 table-responsive"
-                        style="height: calc(100vh - 350px); min-height: 400px; overflow-y: auto;">
+                    <div class="p-0 table-responsive" style="height: calc(100vh - 350px); min-height: 400px; overflow-y: auto;">
                         <table class="table table-custom table-hover mb-0">
-                            <thead class="sticky-top bg-light">
-                                <tr>
-                                    <th>代號</th>
-                                    <th class="text-end">原幣現價</th>
-                                    <th class="text-end">台幣市值/損益</th>
-                                    <th class="text-center">操作</th>
-                                </tr>
-                            </thead>
+                            <thead class="sticky-top bg-light"><tr><th>代號</th><th class="text-end">原幣現價</th><th class="text-end">台幣市值/損益</th><th class="text-center">操作</th></tr></thead>
                             <tbody id="stockTableBody"></tbody>
                         </table>
                     </div>
                     <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center">
                         <span class="small text-muted">最後更新: <span id="lastUpdateStats">--</span></span>
-                        <span class="small fw-bold">股票總值: <span id="totalStockValue"
-                                class="text-primary">$0</span></span>
+                        <span class="small fw-bold">股票總值: <span id="totalStockValue" class="text-primary">$0</span></span>
                     </div>
                 </div>
             </div>
@@ -403,51 +195,27 @@
                 <div class="dashboard-card">
                     <div class="p-4 border-bottom">
                         <h6 class="fw-bold text-secondary mb-3">月底結算 (變動花費)</h6>
-
                         <div class="alert alert-success border mb-3">
                             <div class="small text-success text-center mb-1">扣除投資與固定開銷後</div>
-                            <div class="text-center">
-                                <span class="small text-muted">本月剩餘可花:</span>
-                                <div class="fw-bold fs-3" id="dispRealAvailable">$0</div>
-                            </div>
+                            <div class="text-center"><span class="small text-muted">本月剩餘可花:</span><div class="fw-bold fs-3" id="dispRealAvailable">$0</div></div>
                         </div>
-
                         <div class="alert alert-light border small text-muted mb-3">
-                            固定扣款: <strong id="lblFixedMonthly" class="clickable-amount"
-                                onclick="toggleBreakdown()">$0</strong><br>
-                            <small>(含 貸款/保險/訂閱，點擊查看)</small>
-                            <div id="breakdownBox" class="breakdown-box">
-                                <!-- JS Injected -->
-                            </div>
+                            固定扣款: <strong id="lblFixedMonthly" class="clickable-amount" onclick="toggleBreakdown()">$0</strong><br><small>(含 貸款/保險/訂閱，點擊查看)</small>
+                            <div id="breakdownBox" class="breakdown-box"></div>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label small text-muted">選擇結算月份：</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-0"><i class="fas fa-calendar-alt"></i></span>
-                                <select id="inpMonthSelect" class="form-select form-select-sm bg-light border-0">
-                                    <!-- JS 生成選項 -->
-                                </select>
-                            </div>
+                            <div class="input-group"><span class="input-group-text bg-light border-0"><i class="fas fa-calendar-alt"></i></span><select id="inpMonthSelect" class="form-select form-select-sm bg-light border-0"></select></div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small text-muted">本月吃喝玩樂金額：</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-0"><i class="fas fa-wallet"></i></span>
-                                <input type="number" id="inpMonthSpend" class="form-control bg-light border-0"
-                                    placeholder="本月吃喝玩樂金額">
-                            </div>
+                            <div class="input-group"><span class="input-group-text bg-light border-0"><i class="fas fa-wallet"></i></span><input type="number" id="inpMonthSpend" class="form-control bg-light border-0" placeholder="本月吃喝玩樂金額"></div>
                         </div>
-                        <button class="btn btn-primary w-100 rounded-3 shadow-sm" onclick="settleMonth()">
-                            確認結算
-                        </button>
+                        <button class="btn btn-primary w-100 rounded-3 shadow-sm" onclick="settleMonth()">確認結算</button>
                     </div>
-
                     <div class="p-0" style="height: 300px; overflow-y: auto;">
                         <div class="px-3 py-2 bg-light border-bottom small fw-bold text-muted">歷史紀錄</div>
-                        <table class="table table-sm table-custom mb-0" style="font-size: 0.85rem;">
-                            <tbody id="historyTableBody"></tbody>
-                        </table>
+                        <table class="table table-sm table-custom mb-0" style="font-size: 0.85rem;"><tbody id="historyTableBody"></tbody></table>
                     </div>
                 </div>
             </div>
@@ -455,57 +223,57 @@
             <!-- Right: Charts & Structure -->
             <div class="col-lg-4">
                 <div class="dashboard-card">
-                    <div class="p-3 border-bottom bg-white">
-                        <h6 class="fw-bold mb-0">今年資產走勢 (歷史統計)</h6>
-                    </div>
-                    <div class="p-3">
-                        <canvas id="growthChart" height="250"></canvas>
-                    </div>
-
-                    <!-- Asset Structure -->
+                    <div class="p-3 border-bottom bg-white"><h6 class="fw-bold mb-0">今年資產走勢 (歷史統計)</h6></div>
+                    <div class="p-3"><canvas id="growthChart" height="250"></canvas></div>
                     <div class="p-3 border-top">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="small fw-bold text-dark"><i class="fas fa-layer-group me-1"></i>資產結構
-                                (Assets)</span>
-                            <span class="small text-muted" id="allocPercentText">--</span>
-                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1"><span class="small fw-bold text-dark"><i class="fas fa-layer-group me-1"></i>資產結構</span><span class="small text-muted" id="allocPercentText">--</span></div>
                         <div class="progress mb-2" style="height: 10px;" id="allocProgressBar">
                             <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" title="股票"></div>
                             <div class="progress-bar bg-info" role="progressbar" style="width: 0%" title="現金"></div>
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%" title="固定資產">
-                            </div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%" title="固定資產"></div>
                         </div>
-
-                        <!-- Liabilities Structure -->
-                        <div class="d-flex justify-content-between align-items-center mb-1 mt-3">
-                            <span class="small fw-bold text-danger"><i class="fas fa-university me-1"></i>負債與風險
-                                (Liabilities)</span>
-                            <span class="small text-muted" id="debtRatioText">--</span>
-                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 mt-3"><span class="small fw-bold text-danger"><i class="fas fa-university me-1"></i>負債與風險</span><span class="small text-muted" id="debtRatioText">--</span></div>
                         <div class="progress" style="height: 10px;" id="debtProgressBar">
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: 0%" title="貸款(負債)">
-                            </div>
-                            <div class="progress-bar bg-secondary bg-opacity-25" role="progressbar" style="width: 0%"
-                                title="淨資產"></div>
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 0%" title="貸款"></div>
+                            <div class="progress-bar bg-secondary bg-opacity-25" role="progressbar" style="width: 0%" title="淨資產"></div>
                         </div>
-
                         <div class="row mt-3 text-center small text-muted">
-                            <div class="col-4 border-end">
-                                <div class="fw-bold text-dark" id="valTotalAssets">$0</div>
-                                <div>總資產</div>
-                            </div>
-                            <div class="col-4 border-end">
-                                <div class="fw-bold text-danger" id="valTotalLiabilities">$0</div>
-                                <div>總負債</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="fw-bold text-primary" id="valNetWorth">$0</div>
-                                <div>淨資產</div>
-                            </div>
+                            <div class="col-4 border-end"><div class="fw-bold text-dark" id="valTotalAssets">$0</div><div>總資產</div></div>
+                            <div class="col-4 border-end"><div class="fw-bold text-danger" id="valTotalLiabilities">$0</div><div>總負債</div></div>
+                            <div class="col-4"><div class="fw-bold text-primary" id="valNetWorth">$0</div><div>淨資產</div></div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- AI Chat Widget -->
+    <div class="chat-widget-btn" onclick="toggleChat()" title="AI 理財助手">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-brain me-2"></i>
+                <span class="fw-bold">AI 理財顧問</span>
+            </div>
+            <div>
+                <button class="btn btn-sm text-white" onclick="resetChat()" title="清除紀錄"><i class="fas fa-eraser"></i></button>
+                <button class="btn btn-sm text-white" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div class="msg-ai message">
+                你好！我是你的 AI 理財助手。我已經讀取了你的資產配置，有什麼我可以幫你的嗎？<br>
+                <small class="text-muted mt-2 d-block" style="font-size: 0.7em">* 請先至設定輸入 Gemini API Key</small>
+            </div>
+        </div>
+        <div class="px-3 pb-1 pt-0"><span class="typing-indicator" id="typingIndicator">AI 正在思考中...</span></div>
+        <div class="chat-footer">
+            <input type="text" id="chatInput" class="form-control border-0 bg-light" placeholder="輸入問題..." onkeypress="handleChatKey(event)">
+            <button class="btn btn-primary rounded-circle" onclick="sendChatMessage()" style="width: 40px; height: 40px; padding: 0; background: #2c3e50 ; border-color: #2c3e50 ;"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -519,196 +287,136 @@
                 </div>
                 <div class="modal-body p-0" style="overflow: hidden;">
                     <div class="d-flex h-100">
-                        <!-- Left Menu -->
                         <div class="border-end p-3 h-100" style="width: 200px; min-width: 200px; overflow-y: auto;">
                             <div class="nav flex-column nav-pills" id="settings-tab" role="tablist">
-                                <button class="nav-link active" id="tab-income" data-bs-toggle="pill"
-                                    data-bs-target="#content-income" type="button"><i
-                                        class="fas fa-bullseye"></i>收支配比</button>
-                                <button class="nav-link" id="tab-loan" data-bs-toggle="pill"
-                                    data-bs-target="#content-loan" type="button"><i
-                                        class="fas fa-university"></i>貸款與負債</button>
-                                <button class="nav-link" id="tab-ins" data-bs-toggle="pill"
-                                    data-bs-target="#content-ins" type="button"><i
-                                        class="fas fa-shield-alt"></i>保險管理</button>
-                                <button class="nav-link" id="tab-subs" data-bs-toggle="pill"
-                                    data-bs-target="#content-subs" type="button"><i
-                                        class="fas fa-file-invoice"></i>訂閱管理</button>
-                                <button class="nav-link" id="tab-assets" data-bs-toggle="pill"
-                                    data-bs-target="#content-assets" type="button"><i
-                                        class="fas fa-wallet"></i>資產盤點</button>
-                                <button class="nav-link" id="tab-system" data-bs-toggle="pill"
-                                    data-bs-target="#content-system" type="button"><i
-                                        class="fas fa-cogs"></i>系統</button>
+                                <button class="nav-link active" id="tab-income" data-bs-toggle="pill" data-bs-target="#content-income" type="button"><i class="fas fa-bullseye"></i>收支配比</button>
+                                <button class="nav-link" id="tab-loan" data-bs-toggle="pill" data-bs-target="#content-loan" type="button"><i class="fas fa-university"></i>貸款管理</button>
+                                <button class="nav-link" id="tab-ins" data-bs-toggle="pill" data-bs-target="#content-ins" type="button"><i class="fas fa-shield-alt"></i>保險管理</button>
+                                <button class="nav-link" id="tab-subs" data-bs-toggle="pill" data-bs-target="#content-subs" type="button"><i class="fas fa-file-invoice"></i>訂閱管理</button>
+                                <button class="nav-link" id="tab-assets" data-bs-toggle="pill" data-bs-target="#content-assets" type="button"><i class="fas fa-wallet"></i>資產盤點</button>
+                                <button class="nav-link" id="tab-ai" data-bs-toggle="pill" data-bs-target="#content-ai" type="button" style="color: #2c3e50 ;"><i class="fas fa-robot"></i>AI Agent</button>
+                                <button class="nav-link" id="tab-system" data-bs-toggle="pill" data-bs-target="#content-system" type="button"><i class="fas fa-cogs"></i>系統</button>
                             </div>
                         </div>
-
-                        <!-- Right Content -->
                         <div class="p-4 flex-grow-1 h-100" style="overflow-y: auto;">
                             <div class="tab-content" id="settings-tabContent">
-
-                                <!-- Tab 1: Income (Updated Logic) -->
+                                <!-- Income Tab -->
                                 <div class="tab-pane fade show active" id="content-income">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">1. 設定收入與目標</h6>
                                     <div class="row g-3 mb-3">
-                                        <div class="col-6"><label class="form-label fw-bold">主動收入</label><input
-                                                type="number" id="inpActive" class="form-control" placeholder="0"
-                                                oninput="calcAllocations()"></div>
-                                        <div class="col-6"><label class="form-label fw-bold">被動收入</label><input
-                                                type="number" id="inpPassive" class="form-control" placeholder="0"
-                                                oninput="calcAllocations()"></div>
-                                        <div class="col-12 text-end text-muted small">總月收入: <span id="dispTotalIncome"
-                                                class="fw-bold">$0</span></div>
+                                        <div class="col-6"><label class="form-label fw-bold">主動收入</label><input type="number" id="inpActive" class="form-control" placeholder="0" oninput="calcAllocations()"></div>
+                                        <div class="col-6"><label class="form-label fw-bold">被動收入</label><input type="number" id="inpPassive" class="form-control" placeholder="0" oninput="calcAllocations()"></div>
+                                        <div class="col-12 text-end text-muted small">總月收入: <span id="dispTotalIncome" class="fw-bold">$0</span></div>
                                     </div>
-                                    <div class="mb-4"><label class="form-label fw-bold">目標總資產</label><input
-                                            type="number" id="inpTarget" class="form-control border-warning"
-                                            placeholder="0"></div>
+                                    <div class="mb-4"><label class="form-label fw-bold">目標總資產</label><input type="number" id="inpTarget" class="form-control border-warning" placeholder="0"></div>
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">2. 財務配比規劃</h6>
                                     <div class="alert alert-light border p-3">
                                         <div class="mb-3">
-                                            <label class="form-label d-flex justify-content-between"><span><i
-                                                        class="fas fa-shopping-cart me-1 text-primary"></i>
-                                                    生活消費占比</span><span class="fw-bold"
-                                                    id="valRatioLiving">60%</span></label>
-                                            <!-- Add oninput to force sum <= 100 logic -->
-                                            <input type="range" class="form-range" id="rngRatioLiving" min="0" max="100"
-                                                step="5" value="60" oninput="adjustRatio('living')">
-                                            <div class="d-flex justify-content-between small"><span
-                                                    class="text-muted">規劃上限: <strong
-                                                        id="calcMaxSpend">$0</strong></span></div>
+                                            <label class="form-label d-flex justify-content-between"><span><i class="fas fa-shopping-cart me-1 text-primary"></i> 生活消費占比</span><span class="fw-bold" id="valRatioLiving">60%</span></label>
+                                            <input type="range" class="form-range" id="rngRatioLiving" min="0" max="100" step="5" value="60" oninput="adjustRatio('living')">
+                                            <div class="d-flex justify-content-between small"><span class="text-muted">規劃上限: <strong id="calcMaxSpend">$0</strong></span></div>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label d-flex justify-content-between"><span><i
-                                                        class="fas fa-piggy-bank me-1 text-success"></i>
-                                                    投資儲蓄占比</span><span class="fw-bold"
-                                                    id="valRatioInvest">30%</span></label>
-                                            <input type="range" class="form-range" id="rngRatioInvest" min="0" max="100"
-                                                step="5" value="30" oninput="adjustRatio('invest')">
-                                            <div class="small text-muted">建議投資額: <strong
-                                                    id="calcTargetInvest">$0</strong></div>
+                                            <label class="form-label d-flex justify-content-between"><span><i class="fas fa-piggy-bank me-1 text-success"></i> 投資儲蓄占比</span><span class="fw-bold" id="valRatioInvest">30%</span></label>
+                                            <input type="range" class="form-range" id="rngRatioInvest" min="0" max="100" step="5" value="30" oninput="adjustRatio('invest')">
+                                            <div class="small text-muted">建議投資額: <strong id="calcTargetInvest">$0</strong></div>
                                         </div>
-                                        <div class="small text-end text-muted">剩餘 (負債/其他): <span
-                                                id="valRatioDebt">10%</span></div>
+                                        <div class="small text-end text-muted">剩餘 (負債/其他): <span id="valRatioDebt">10%</span></div>
                                     </div>
-                                    <button type="button" class="btn btn-outline-primary w-100"
-                                        onclick="applyCalculatedBudget()"><i class="fas fa-check-circle me-1"></i>
-                                        套用「規劃上限」為本月預算</button>
-                                    <div class="mt-2 text-muted small text-center">目前設定預算: <span
-                                            id="dispBaseBudget">$0</span></div>
+                                    <button type="button" class="btn btn-outline-primary w-100" onclick="applyCalculatedBudget()"><i class="fas fa-check-circle me-1"></i> 套用「規劃上限」為本月預算</button>
+                                    <div class="mt-2 text-muted small text-center">目前設定預算: <span id="dispBaseBudget">$0</span></div>
                                     <input type="hidden" id="inpBaseBudget">
                                 </div>
-
-                                <!-- Tab 2: Loan -->
+                                <!-- Loan Tab -->
                                 <div class="tab-pane fade" id="content-loan">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">貸款專案管理</h6>
                                     <div class="bg-light p-3 rounded mb-3 border">
                                         <div class="row g-2 mb-2">
-                                            <div class="col-4"><select id="inpLoanCat"
-                                                    class="form-select form-select-sm">
-                                                    <option value="房貸">房貸</option>
-                                                    <option value="車貸">車貸</option>
-                                                    <option value="學貸">學貸</option>
-                                                    <option value="其他">其他</option>
-                                                </select></div>
-                                            <div class="col-8"><input type="text" id="inpLoanName"
-                                                    class="form-control form-select-sm" placeholder="名稱"></div>
+                                            <div class="col-4"><select id="inpLoanCat" class="form-select form-select-sm"><option value="房貸">房貸</option><option value="車貸">車貸</option><option value="學貸">學貸</option><option value="其他">其他</option></select></div>
+                                            <div class="col-8"><input type="text" id="inpLoanName" class="form-control form-select-sm" placeholder="名稱"></div>
                                         </div>
                                         <div class="row g-2 mb-2">
-                                            <div class="col-6"><label class="small text-muted">總額</label><input
-                                                    type="number" id="inpLoanTotal" class="form-control form-control-sm"
-                                                    oninput="calcLoanDetails()"></div>
-                                            <div class="col-6"><label class="small text-muted">利率(%)</label><input
-                                                    type="number" id="inpLoanRate" class="form-control form-control-sm"
-                                                    placeholder="2.1" oninput="calcLoanDetails()"></div>
+                                            <div class="col-6"><label class="small text-muted">總額</label><input type="number" id="inpLoanTotal" class="form-control form-control-sm" oninput="calcLoanDetails()"></div>
+                                            <div class="col-6"><label class="small text-muted">利率(%)</label><input type="number" id="inpLoanRate" class="form-control form-control-sm" placeholder="2.1" oninput="calcLoanDetails()"></div>
                                         </div>
                                         <div class="row g-2 mb-2">
-                                            <div class="col-6"><label class="small text-muted">起始日</label><input
-                                                    type="date" id="inpLoanStart" class="form-control form-control-sm"
-                                                    oninput="calcLoanDetails()"></div>
-                                            <div class="col-6"><label
-                                                    class="small text-muted text-primary fw-bold">期數(月)</label><input
-                                                    type="number" id="inpLoanMonths"
-                                                    class="form-control form-control-sm" placeholder="240"
-                                                    oninput="calcLoanDetails()"></div>
+                                            <div class="col-6"><label class="small text-muted">起始日</label><input type="date" id="inpLoanStart" class="form-control form-control-sm" oninput="calcLoanDetails()"></div>
+                                            <div class="col-6"><label class="small text-muted text-primary fw-bold">期數(月)</label><input type="number" id="inpLoanMonths" class="form-control form-control-sm" placeholder="240" oninput="calcLoanDetails()"></div>
                                         </div>
                                         <div class="card bg-white border p-2 mb-2">
-                                            <div class="d-flex justify-content-between align-items-center"><span
-                                                    class="text-success fw-bold">月還款(本息):</span><span
-                                                    class="fw-bold fs-5 text-success"
-                                                    id="txtLoanMonthly">$0</span><input type="hidden"
-                                                    id="inpLoanMonthly"><input type="hidden" id="inpLoanEnd"></div>
+                                            <div class="d-flex justify-content-between align-items-center"><span class="text-success fw-bold">月還款(本息):</span><span class="fw-bold fs-5 text-success" id="txtLoanMonthly">$0</span><input type="hidden" id="inpLoanMonthly"><input type="hidden" id="inpLoanEnd"></div>
                                         </div>
                                         <button class="btn btn-primary w-100 btn-sm" onclick="addLoan()">新增貸款</button>
                                     </div>
-                                    <div class="d-flex justify-content-between align-items-center mb-2"><span
-                                            class="small text-muted">貸款列表</span><span class="fw-bold small">月還款總計: <span
-                                                id="totalLoanPayment" class="text-danger">$0</span></span></div>
-                                    <div
-                                        class="d-flex justify-content-between align-items-center mb-2 small px-2 bg-light border rounded py-1">
-                                        <span class="text-muted">建議上限(30%): <span id="calcSafeLoan30"
-                                                class="fw-bold">$0</span></span>
-                                        <span class="text-muted">狀態: <span id="calcLoanStatus"
-                                                class="fw-bold">--</span></span>
-                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2"><span class="small text-muted">貸款列表</span><span class="fw-bold small">月還款總計: <span id="totalLoanPayment" class="text-danger">$0</span></span></div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 small px-2 bg-light border rounded py-1"><span class="text-muted">建議上限(30%): <span id="calcSafeLoan30" class="fw-bold">$0</span></span><span class="text-muted">狀態: <span id="calcLoanStatus" class="fw-bold">--</span></span></div>
                                     <div id="loanList" style="max-height: 150px; overflow-y: auto;"></div>
                                 </div>
-
-                                <!-- Tab 3-6 (Kept mostly same, structure preserved) -->
+                                <!-- Insurance Tab -->
                                 <div class="tab-pane fade" id="content-ins">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">保險管理</h6>
                                     <div class="bg-light p-3 rounded mb-3 border">
                                         <div class="row g-2 mb-2">
-                                            <div class="col-8"><input type="text" id="inpInsName" class="form-control"
-                                                    placeholder="項目"></div>
-                                            <div class="col-4"><select id="inpInsFreq" class="form-select">
-                                                    <option value="12">年繳</option>
-                                                    <option value="1">月繳</option>
-                                                </select></div>
+                                            <div class="col-8"><input type="text" id="inpInsName" class="form-control" placeholder="項目"></div>
+                                            <div class="col-4"><select id="inpInsFreq" class="form-select"><option value="12">年繳</option><option value="1">月繳</option></select></div>
                                         </div>
-                                        <div class="input-group mb-2"><input type="number" id="inpInsAmount"
-                                                class="form-control" placeholder="金額"><button
-                                                class="btn btn-warning text-dark" onclick="addInsurance()"><i
-                                                    class="fas fa-plus"></i></button></div>
+                                        <div class="input-group mb-2"><input type="number" id="inpInsAmount" class="form-control" placeholder="金額"><button class="btn btn-warning text-dark" onclick="addInsurance()"><i class="fas fa-plus"></i></button></div>
                                     </div>
-                                    <div class="d-flex justify-content-between align-items-center mb-2 px-1"><span
-                                            class="small text-muted">列表</span><span class="fw-bold text-warning"
-                                            id="totalInsDisplay">$0 /月</span></div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 px-1"><span class="small text-muted">列表</span><span class="fw-bold text-warning" id="totalInsDisplay">$0 /月</span></div>
                                     <div id="insList" style="max-height: 250px; overflow-y: auto;"></div>
                                 </div>
+                                <!-- Subs Tab -->
                                 <div class="tab-pane fade" id="content-subs">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">訂閱管理</h6>
-                                    <div class="input-group mb-3"><input type="text" id="inpSubName"
-                                            class="form-control" placeholder="項目"><input type="number" id="inpSubAmount"
-                                            class="form-control" placeholder="金額"><button class="btn btn-primary"
-                                            onclick="addSubscription()"><i class="fas fa-plus"></i></button></div>
-                                    <div class="d-flex justify-content-between align-items-center mb-2 px-1"><span
-                                            class="small text-muted">總額</span><span class="fw-bold text-primary"
-                                            id="totalSubsDisplay">$0</span></div>
+                                    <div class="input-group mb-3"><input type="text" id="inpSubName" class="form-control" placeholder="項目"><input type="number" id="inpSubAmount" class="form-control" placeholder="金額"><button class="btn btn-primary" onclick="addSubscription()"><i class="fas fa-plus"></i></button></div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 px-1"><span class="small text-muted">總額</span><span class="fw-bold text-primary" id="totalSubsDisplay">$0</span></div>
                                     <div id="subsList" style="max-height: 250px; overflow-y: auto;"></div>
                                 </div>
+                                <!-- Assets Tab -->
                                 <div class="tab-pane fade" id="content-assets">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">資產盤點</h6>
-                                    <div class="mb-3"><label class="form-label fw-bold">現金/存款</label><input
-                                            type="number" id="inpCash" class="form-control" placeholder="0"></div>
-                                    <div class="mb-3"><label class="form-label fw-bold">固定資產</label><input type="number"
-                                            id="inpFixed" class="form-control" placeholder="0"></div>
+                                    <div class="mb-3"><label class="form-label fw-bold">現金/存款</label><input type="number" id="inpCash" class="form-control" placeholder="0"></div>
+                                    <div class="mb-3"><label class="form-label fw-bold">固定資產</label><input type="number" id="inpFixed" class="form-control" placeholder="0"></div>
                                 </div>
+                                <!-- AI Agent Tab (NEW) -->
+                                <div class="tab-pane fade" id="content-ai">
+                                    <h6 class="fw-bold mb-3 pb-2 border-bottom" style="color: #2c3e50 ;"><i class="fas fa-brain me-2"></i>AI Agent 設定</h6>
+                                    <div class="alert alert-info small">
+                                        <i class="fas fa-info-circle me-1"></i> 請輸入 Google Gemini API Key 以啟用智能理財助手。<br>
+                                        資料將僅傳送至 Google API，不會儲存在其他伺服器。
+                                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="fw-bold">取得 API Key</a>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">Gemini API Key</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                            <input type="password" id="inpApiKey" class="form-control" placeholder="AIzaSy...">
+                                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('inpApiKey')"><i class="fas fa-eye"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">AI 模型</label>
+                                        <select id="inpAiModel" class="form-select">
+                                            <option value="gemini-pro">Gemini Pro (標準)</option>
+                                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (快速)</option>
+                                        </select>
+                                    </div>
+                                    <hr>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="aiAutoContext" checked>
+                                        <label class="form-check-label" for="aiAutoContext">自動提供財務資料給 AI (推薦)</label>
+                                    </div>
+                                </div>
+                                <!-- System Tab -->
                                 <div class="tab-pane fade" id="content-system">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">系統</h6>
-                                    <div class="mb-3 form-check form-switch"><input class="form-check-input"
-                                            type="checkbox" id="strategyToggle"><label class="form-check-label fw-bold"
-                                            for="strategyToggle">彈性模式</label></div>
+                                    <div class="mb-3 form-check form-switch"><input class="form-check-input" type="checkbox" id="strategyToggle"><label class="form-check-label fw-bold" for="strategyToggle">彈性模式</label></div>
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2 mt-4">備份</h6>
                                     <div class="row g-2 mb-3">
-                                        <div class="col-6"><button class="btn btn-outline-primary w-100"
-                                                onclick="exportData()">匯出</button></div>
-                                        <div class="col-6"><button class="btn btn-outline-success w-100"
-                                                onclick="document.getElementById('inpImportFile').click()">匯入</button><input
-                                                type="file" id="inpImportFile" style="display:none" accept=".json"
-                                                onchange="importData(this)"></div>
+                                        <div class="col-6"><button class="btn btn-outline-primary w-100" onclick="exportData()">匯出</button></div>
+                                        <div class="col-6"><button class="btn btn-outline-success w-100" onclick="document.getElementById('inpImportFile').click()">匯入</button><input type="file" id="inpImportFile" style="display:none" accept=".json" onchange="importData(this)"></div>
                                     </div>
-                                    <hr><button type="button" class="btn btn-outline-danger w-100"
-                                        onclick="clearDB()">重置</button>
+                                    <hr><button type="button" class="btn btn-outline-danger w-100" onclick="clearDB()">重置</button>
                                 </div>
                             </div>
                         </div>
@@ -726,29 +434,22 @@
     <div class="modal fade" id="stockModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header border-bottom-0">
-                    <h5 class="modal-title fw-bold">新增持股</h5><button type="button" class="btn-close"
-                        data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header border-bottom-0"><h5 class="modal-title fw-bold">新增持股</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-3"><label class="small text-muted">代號</label><input type="text" id="inpStockSymbol"
-                            class="form-control" placeholder="例如: 2330.TW"></div>
+                    <div class="mb-3"><label class="small text-muted">代號</label><input type="text" id="inpStockSymbol" class="form-control" placeholder="例如: 2330.TW"></div>
                     <div class="row g-2">
-                        <div class="col-6"><label class="small text-muted">成本(原幣)</label><input type="number"
-                                id="inpStockCost" class="form-control"></div>
-                        <div class="col-6"><label class="small text-muted">股數</label><input type="number"
-                                id="inpStockShares" class="form-control"></div>
+                        <div class="col-6"><label class="small text-muted">成本(原幣)</label><input type="number" id="inpStockCost" class="form-control"></div>
+                        <div class="col-6"><label class="small text-muted">股數</label><input type="number" id="inpStockShares" class="form-control"></div>
                     </div>
                 </div>
-                <div class="modal-footer border-top-0"><button type="button" class="btn btn-primary w-100 fw-bold"
-                        onclick="addStock()">加入</button></div>
+                <div class="modal-footer border-top-0"><button type="button" class="btn btn-primary w-100 fw-bold" onclick="addStock()">加入</button></div>
             </div>
         </div>
     </div>
 
     <script>
         const DB_NAME = 'AssetPlannerDB';
-        const DB_VERSION = 6;
+        const DB_VERSION = 7; // Bump version for AI Settings
         let db;
         let usdTwdRate = 32.5;
 
@@ -756,12 +457,15 @@
             cash: 0, fixed: 0, active: 0, passive: 0,
             target: 1000000, baseBudget: 30000, currentBudget: 30000,
             ratioLiving: 60, ratioInvest: 30,
-            strategy: 'strict', isSetup: false
+            strategy: 'strict', isSetup: false,
+            // AI Config
+            apiKey: '', aiModel: 'gemini-pro', aiAutoContext: true
         };
 
         let appState = { ...defaultState };
         let stocks = []; let subscriptions = []; let loans = []; let insurances = [];
         let chartInstance = null; let settingsModal, stockModal;
+        let chatHistory = []; // Store chat history in memory
 
         function setText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
 
@@ -770,18 +474,15 @@
             stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
             try {
                 await initDB(); await loadData();
-                // 生成月份選擇器
                 const monthSel = document.getElementById('inpMonthSelect');
                 if (monthSel) {
                     const now = new Date();
-                    const currentYear = now.getFullYear();
-                    const currentMonth = now.getMonth();
                     monthSel.innerHTML = '';
                     for (let i = 0; i < 12; i++) {
-                        const date = new Date(currentYear, i, 1);
+                        const date = new Date(now.getFullYear(), i, 1);
                         const label = `${date.getFullYear()}年${date.getMonth() + 1}月`;
                         const value = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                        monthSel.innerHTML += `<option value="${value}"${i === currentMonth ? ' selected' : ''}>${label}</option>`;
+                        monthSel.innerHTML += `<option value="${value}"${i === now.getMonth() ? ' selected' : ''}>${label}</option>`;
                     }
                 }
                 if (stocks.length > 0) refreshStockPrices(); else renderDashboard();
@@ -809,7 +510,7 @@
             const tx = db.transaction(stores, 'readonly');
             for (const s of stores) exportObj[s] = await new Promise(r => tx.objectStore(s).getAll().onsuccess = e => r(e.target.result));
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
-            const a = document.createElement('a'); a.href = dataStr; a.download = "Backup.json"; a.click();
+            const a = document.createElement('a'); a.href = dataStr; a.download = "AssetGuardian_Backup.json"; a.click();
         }
         async function importData(input) {
             const file = input.files[0]; if (!file) return;
@@ -835,15 +536,9 @@
         function adjustRatio(source) {
             let living = parseInt(document.getElementById('rngRatioLiving').value);
             let invest = parseInt(document.getElementById('rngRatioInvest').value);
-
             if (living + invest > 100) {
-                if (source === 'living') {
-                    invest = 100 - living;
-                    document.getElementById('rngRatioInvest').value = invest;
-                } else {
-                    living = 100 - invest;
-                    document.getElementById('rngRatioLiving').value = living;
-                }
+                if (source === 'living') { invest = 100 - living; document.getElementById('rngRatioInvest').value = invest; }
+                else { living = 100 - invest; document.getElementById('rngRatioLiving').value = living; }
             }
             calcAllocations(living, invest);
         }
@@ -852,7 +547,6 @@
             const active = parseFloat(document.getElementById('inpActive').value) || 0;
             const passive = parseFloat(document.getElementById('inpPassive').value) || 0;
             const totalIncome = active + passive;
-
             const ratioLiving = livingVal !== undefined ? livingVal : parseInt(document.getElementById('rngRatioLiving').value);
             const ratioInvest = investVal !== undefined ? investVal : parseInt(document.getElementById('rngRatioInvest').value);
             const ratioDebt = Math.max(0, 100 - ratioLiving - ratioInvest);
@@ -884,39 +578,25 @@
             }
         }
 
-        // --- Fixed Cost Detail ---
         function toggleBreakdown() {
             const box = document.getElementById('breakdownBox');
             if (box) {
-                if (box.style.display === 'block') {
-                    box.style.display = 'none';
-                } else {
-                    // 只計算正在還款中的貸款
+                if (box.style.display === 'block') { box.style.display = 'none'; } else {
                     const now = new Date();
-                    const activeLoans = loans.filter(l => {
-                        if (!l.startDate || !l.endDate) return true; // 若資料不完整則預設計入
-                        const start = new Date(l.startDate);
-                        const end = new Date(l.endDate);
-                        return start <= now && now <= end;
-                    });
+                    const activeLoans = loans.filter(l => { if (!l.startDate || !l.endDate) return true; const start = new Date(l.startDate); const end = new Date(l.endDate); return start <= now && now <= end; });
                     const totalLoans = activeLoans.reduce((acc, l) => acc + l.monthlyPayment, 0);
                     const totalSubs = subscriptions.reduce((acc, s) => acc + s.amount, 0);
                     const totalIns = insurances.reduce((acc, i) => acc + (i.freq === 12 ? i.amount / 12 : i.amount), 0);
                     const total = totalLoans + totalSubs + totalIns;
-
-                    box.innerHTML = `
-                    <div class="d-flex justify-content-between"><span>貸款:</span><span>${formatCurrency(totalLoans)}</span></div>
-                    <div class="d-flex justify-content-between"><span>保險:</span><span>${formatCurrency(Math.round(totalIns))}</span></div>
-                    <div class="d-flex justify-content-between"><span>訂閱:</span><span>${formatCurrency(totalSubs)}</span></div>
-                    <div class="border-top mt-1 pt-1 d-flex justify-content-between fw-bold"><span>總計:</span><span>${formatCurrency(Math.round(total))}</span></div>
-                `;
+                    box.innerHTML = `<div class="d-flex justify-content-between"><span>貸款:</span><span>${formatCurrency(totalLoans)}</span></div><div class="d-flex justify-content-between"><span>保險:</span><span>${formatCurrency(Math.round(totalIns))}</span></div><div class="d-flex justify-content-between"><span>訂閱:</span><span>${formatCurrency(totalSubs)}</span></div><div class="border-top mt-1 pt-1 d-flex justify-content-between fw-bold"><span>總計:</span><span>${formatCurrency(Math.round(total))}</span></div>`;
                     box.style.display = 'block';
                 }
             }
         }
 
-        // --- Settings & Modal ---
+        // --- Settings ---
         function openSettings() {
+            // General Settings
             document.getElementById('inpCash').value = appState.cash;
             document.getElementById('inpFixed').value = appState.fixed;
             document.getElementById('inpActive').value = appState.active;
@@ -927,25 +607,31 @@
             document.getElementById('rngRatioLiving').value = appState.ratioLiving || 60;
             document.getElementById('rngRatioInvest').value = appState.ratioInvest || 30;
             document.getElementById('strategyToggle').checked = (appState.strategy === 'flexible');
-            calcAllocations();
+            
+            // AI Settings
+            document.getElementById('inpApiKey').value = appState.apiKey || '';
+            document.getElementById('inpAiModel').value = appState.aiModel || 'gemini-pro';
+            document.getElementById('aiAutoContext').checked = appState.aiAutoContext !== false; // default true
 
-            // Tab switching logic via BS
+            calcAllocations();
             const triggerEl = document.querySelector('#settings-tab button[data-bs-target="#content-income"]');
             const tabInstance = bootstrap.Tab.getOrCreateInstance(triggerEl);
             tabInstance.show();
-
             settingsModal.show();
         }
-
-        function openStockModal() {
-            stockModal.show();
+        
+        function togglePasswordVisibility(id) {
+            const x = document.getElementById(id);
+            if (x.type === "password") x.type = "text"; else x.type = "password";
         }
 
-        // ... (All CRUD functions same as V6.5.1, condensed below) ...
+        function openStockModal() { stockModal.show(); }
+
+        // --- CRUD Ops ---
         async function addInsurance() { const n = document.getElementById('inpInsName').value; const f = parseInt(document.getElementById('inpInsFreq').value); const a = parseFloat(document.getElementById('inpInsAmount').value); if (!n || isNaN(a)) return; await new Promise(r => getStore('insurance', 'readwrite').add({ name: n, freq: f, amount: a }).onsuccess = r); document.getElementById('inpInsName').value = ''; document.getElementById('inpInsAmount').value = ''; await refreshInsurance(); }
         async function removeInsurance(id) { await new Promise(r => getStore('insurance', 'readwrite').delete(id).onsuccess = r); await refreshInsurance(); }
         async function refreshInsurance() { const r = await new Promise(x => getStore('insurance').getAll().onsuccess = e => x(e.target.result)); insurances = r; const el = document.getElementById('insList'); el.innerHTML = ''; let t = 0; insurances.forEach(i => { const m = i.freq === 12 ? i.amount / 12 : i.amount; t += m; el.innerHTML += `<div class="sub-item ins-item mb-2 rounded"><div><span class="fw-bold">${i.name}</span></div><div class="d-flex align-items-center"><small class="me-3 text-warning">$${Math.round(m)}/m</small><button class="btn btn-sm text-danger" onclick="removeInsurance(${i.id})"><i class="fas fa-trash-alt"></i></button></div></div>` }); setText('totalInsDisplay', formatCurrency(Math.round(t)) + "/月"); }
-
+        
         function calcLoanDetails() { const t = parseFloat(document.getElementById('inpLoanTotal').value) || 0; const r = parseFloat(document.getElementById('inpLoanRate').value) || 0; const m = parseInt(document.getElementById('inpLoanMonths').value) || 0; let p = 0; if (t > 0 && m > 0) { if (r === 0) p = t / m; else { const i = r / 100 / 12; p = t * (i * Math.pow(1 + i, m)) / (Math.pow(1 + i, m) - 1) } } document.getElementById('inpLoanMonthly').value = p; setText('txtLoanMonthly', formatCurrency(Math.round(p))); if (document.getElementById('inpLoanStart').value && m > 0) { const d = new Date(document.getElementById('inpLoanStart').value); d.setMonth(d.getMonth() + m); document.getElementById('inpLoanEnd').value = d.toISOString().split('T')[0] } }
         async function addLoan() { const c = document.getElementById('inpLoanCat').value; const n = document.getElementById('inpLoanName').value; const t = parseFloat(document.getElementById('inpLoanTotal').value); const r = parseFloat(document.getElementById('inpLoanRate').value); const s = document.getElementById('inpLoanStart').value; const e = document.getElementById('inpLoanEnd').value; const m = parseFloat(document.getElementById('inpLoanMonthly').value); if (!n || isNaN(m)) return; await new Promise(x => getStore('loans', 'readwrite').add({ category: c, name: n, totalAmount: t, rate: r, startDate: s, endDate: e, monthlyPayment: m }).onsuccess = x); await refreshLoans(); document.getElementById('inpLoanName').value = '' }
         async function deleteLoan(id) { if (confirm("刪除?")) await new Promise(x => getStore('loans', 'readwrite').delete(id).onsuccess = x); await refreshLoans() }
@@ -959,280 +645,261 @@
         async function deleteStock(id) { if (confirm("刪除?")) await new Promise(x => getStore('stocks', 'readwrite').delete(id).onsuccess = x); loadData().then(renderDashboard) }
         async function fetchStockPrice(symbol) {
             try {
-                // Yahoo Finance API via CORS Proxy
-                // Note: Using a public proxy. If it fails, check corsproxy.io status.
                 const proxy = "https://corsproxy.io/?";
                 const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d`;
                 const res = await fetch(proxy + encodeURIComponent(url));
                 const json = await res.json();
-
                 if (json.chart && json.chart.result && json.chart.result.length > 0) {
                     const meta = json.chart.result[0].meta;
-                    // Prioritize regularMarketPrice, fallback to previousClose
                     return meta.regularMarketPrice || meta.chartPreviousClose;
                 }
                 return null;
-            } catch (e) {
-                console.error("Stock fetch error:", symbol, e);
-                return null;
-            }
+            } catch (e) { console.error("Stock error:", e); return null; }
         }
-
         async function refreshStockPrices() {
-            const btn = document.getElementById('btnRefreshStocks');
-            const icon = document.getElementById('iconRefresh');
-
-            if (btn) btn.disabled = true;
-            if (icon) icon.classList.add('spin');
-
-            // 1. Get latest list from DB
+            const btn = document.getElementById('btnRefreshStocks'); const icon = document.getElementById('iconRefresh');
+            if (btn) btn.disabled = true; if (icon) icon.classList.add('spin');
             stocks = await new Promise(x => getStore('stocks').getAll().onsuccess = e => x(e.target.result));
-
-            // 2. Fetch updates in parallel
-            const updates = stocks.map(async (s) => {
-                const price = await fetchStockPrice(s.symbol);
-                if (price !== null) {
-                    s.currentPrice = price;
-                    s.lastUpdate = Date.now();
-                    // Update individual stock in DB
-                    await new Promise(r => getStore('stocks', 'readwrite').put(s).onsuccess = r);
-                }
-            });
-
+            const updates = stocks.map(async (s) => { const price = await fetchStockPrice(s.symbol); if (price !== null) { s.currentPrice = price; s.lastUpdate = Date.now(); await new Promise(r => getStore('stocks', 'readwrite').put(s).onsuccess = r); } });
             await Promise.all(updates);
-
-            // 3. Reload updated data to ensure consistency
             stocks = await new Promise(x => getStore('stocks').getAll().onsuccess = e => x(e.target.result));
-
             renderDashboard();
-
-            if (btn) btn.disabled = false;
-            if (icon) icon.classList.remove('spin');
+            if (btn) btn.disabled = false; if (icon) icon.classList.remove('spin');
             setText('lastUpdateStats', new Date().toLocaleTimeString());
         }
 
         async function loadData() { const s = await new Promise(x => getStore('settings').get('main_config').onsuccess = e => x(e.target.result)); if (s) appState = { ...defaultState, ...s.data }; stocks = await new Promise(x => getStore('stocks').getAll().onsuccess = e => x(e.target.result)); await refreshSubscriptions(); await refreshInsurance(); await refreshLoans() }
-        async function saveSettings() { appState.cash = parseFloat(document.getElementById('inpCash').value) || 0; appState.fixed = parseFloat(document.getElementById('inpFixed').value) || 0; appState.active = parseFloat(document.getElementById('inpActive').value) || 0; appState.passive = parseFloat(document.getElementById('inpPassive').value) || 0; appState.target = parseFloat(document.getElementById('inpTarget').value) || 0; appState.baseBudget = parseFloat(document.getElementById('inpBaseBudget').value) || 0; appState.ratioLiving = parseInt(document.getElementById('rngRatioLiving').value); appState.ratioInvest = parseInt(document.getElementById('rngRatioInvest').value); appState.strategy = document.getElementById('strategyToggle').checked ? 'flexible' : 'strict'; appState.isSetup = true; if (appState.currentBudget === defaultState.currentBudget && !appState.isSetup) appState.currentBudget = appState.baseBudget; await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); settingsModal.hide(); renderDashboard() }
+        async function saveSettings() {
+            appState.cash = parseFloat(document.getElementById('inpCash').value) || 0;
+            appState.fixed = parseFloat(document.getElementById('inpFixed').value) || 0;
+            appState.active = parseFloat(document.getElementById('inpActive').value) || 0;
+            appState.passive = parseFloat(document.getElementById('inpPassive').value) || 0;
+            appState.target = parseFloat(document.getElementById('inpTarget').value) || 0;
+            appState.baseBudget = parseFloat(document.getElementById('inpBaseBudget').value) || 0;
+            appState.ratioLiving = parseInt(document.getElementById('rngRatioLiving').value);
+            appState.ratioInvest = parseInt(document.getElementById('rngRatioInvest').value);
+            appState.strategy = document.getElementById('strategyToggle').checked ? 'flexible' : 'strict';
+            
+            // AI Save
+            appState.apiKey = document.getElementById('inpApiKey').value.trim();
+            appState.aiModel = document.getElementById('inpAiModel').value;
+            appState.aiAutoContext = document.getElementById('aiAutoContext').checked;
+
+            appState.isSetup = true;
+            if (appState.currentBudget === defaultState.currentBudget && !appState.isSetup) appState.currentBudget = appState.baseBudget;
+            await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x);
+            settingsModal.hide(); renderDashboard()
+        }
+
         async function settleMonth() {
             const v = parseFloat(document.getElementById('inpMonthSpend').value);
             if (isNaN(v)) { alert("金額?"); return }
             const s = subscriptions.reduce((a, b) => a + b.amount, 0);
-            // 只計算正在還款中的貸款
             const now = new Date();
-            const activeLoans = loans.filter(l => {
-                if (!l.startDate || !l.endDate) return true;
-                const start = new Date(l.startDate);
-                const end = new Date(l.endDate);
-                return start <= now && now <= end;
-            });
+            const activeLoans = loans.filter(l => { if (!l.startDate || !l.endDate) return true; const start = new Date(l.startDate); const end = new Date(l.endDate); return start <= now && now <= end; });
             const l = activeLoans.reduce((a, b) => a + b.monthlyPayment, 0);
             const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
-            const out = v + s + l + i;
-            const inc = appState.active + appState.passive;
-            const investRatio = appState.ratioInvest || 30;
-            const investTarget = Math.floor(inc * (investRatio / 100));
-            const totalFixed = s + l + i;
-            const realAvailable = Math.max(0, inc - investTarget - totalFixed);
-            const sav = inc - out;
-            appState.cash += sav;
-            // 用 realAvailable 作為判斷基準
-            const d = v - realAvailable;
-            // 取得選定月份
-            const monthSel = document.getElementById('inpMonthSelect');
-            let dateStr;
-            if (monthSel) {
-                // 以每月1日為紀錄日期
-                dateStr = monthSel.value + '-01';
-            } else {
-                dateStr = new Date().toLocaleDateString();
-            }
+            const out = v + s + l + i; const inc = appState.active + appState.passive;
+            const investRatio = appState.ratioInvest || 30; const investTarget = Math.floor(inc * (investRatio / 100));
+            const totalFixed = s + l + i; const realAvailable = Math.max(0, inc - investTarget - totalFixed);
+            const sav = inc - out; appState.cash += sav; const d = v - realAvailable;
+            const monthSel = document.getElementById('inpMonthSelect'); const dateStr = monthSel ? monthSel.value + '-01' : new Date().toLocaleDateString();
             await new Promise(x => getStore('records', 'readwrite').add({ date: dateStr, spend: v, diff: d, status: d > 0 ? 'bad' : 'good', msg: d > 0 ? '超支' : '結餘', assetChange: sav }).onsuccess = x);
             await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x);
-            document.getElementById('inpMonthSpend').value = '';
-            renderDashboard();
+            document.getElementById('inpMonthSpend').value = ''; renderDashboard();
         }
-        async function deleteRecord(id, c) { if (confirm("刪?")) { appState.cash -= c; await new Promise(x => getStore('records', 'readwrite').delete(id).onsuccess = x); await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x); renderDashboard() } }
+
         async function clearDB() { if (!confirm("清空?")) return; const tx = db.transaction(['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'], 'readwrite');['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance'].forEach(s => tx.objectStore(s).clear()); tx.oncomplete = () => location.reload() }
 
-        // --- Render ---
+        // --- Render Dashboard ---
         async function renderDashboard() {
-            let sv = 0, cv = 0;
-            const el = document.getElementById('stockTableBody'); if (el) el.innerHTML = '';
-            stocks.forEach(s => {
-                const r = s.symbol.includes('.TW') ? 1 : usdTwdRate;
-                const v = s.currentPrice * s.shares * r; const c = s.cost * s.shares * r; sv += v; cv += c;
-                const pnl = v - c; const pp = c > 0 ? (pnl / c) * 100 : 0; const cls = pnl >= 0 ? 'text-up' : 'text-down'; const ico = pnl >= 0 ? 'fa-caret-up' : 'fa-caret-down';
-                if (el) el.innerHTML += `<tr><td><div class="fw-bold">${s.symbol}</div><small class="text-muted">${s.shares}股</small></td><td class="text-end"><div class="fw-bold">${s.symbol.includes('.TW') ? 'NT$' : 'US$'} ${s.currentPrice.toFixed(2)}</div><small class="text-muted">均 ${s.cost}</small></td><td class="text-end"><div>NT$ ${formatCurrency(v)}</div><small class="${cls}"><i class="fas ${ico}"></i> NT$ ${formatCurrency(pnl)} (${pp.toFixed(1)}%)</small></td><td class="text-center"><button class="btn-icon btn-delete" onclick="deleteStock(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`;
-            });
-            setText('totalStockValue', formatCurrency(sv));
-            const liquid = appState.cash + sv; const total = liquid + appState.fixed;
-            setText('dispTotalAssets', formatCurrency(total));
-
-            const pnlT = sv - cv; const ps = pnlT >= 0 ? '+' : '';
-            setText('dispTotalAssetsSub', `含現金 ${formatCurrency(appState.cash)} 及股票損益 ${ps}${formatCurrency(pnlT)}`);
-
-            // FIX 1: Use appState.ratioInvest which is updated by settings
-            const inc = appState.active + appState.passive;
-            const investRatio = appState.ratioInvest || 30; // Default if missing
-            setText('dispInvestTarget', formatCurrency(Math.floor(inc * (investRatio / 100))));
-            setText('dispInvestRatio', `依照收入占比 ${investRatio}%`); // Fix label
-
-            // 固定扣款只計算正在還款中的貸款
-            const now = new Date();
-            const activeLoans = loans.filter(l => {
-                if (!l.startDate || !l.endDate) return true;
-                const start = new Date(l.startDate);
-                const end = new Date(l.endDate);
-                return start <= now && now <= end;
-            });
-            const l = activeLoans.reduce((a, b) => a + b.monthlyPayment, 0);
-            const s = subscriptions.reduce((a, b) => a + b.amount, 0);
-            const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
-
-            const netB = Math.max(0, appState.currentBudget - s - i);
-            setText('dispCurrentBudget', formatCurrency(netB));
-            setText('lblFixedMonthly', formatCurrency(s + l + i));
-
-            // FIX 2: Calculate "Net Available" for Variable Spending
-            // Formula: Income - Suggested Investment - Fixed Costs (Loans + Subs + Ins)
-            // Note: appState.currentBudget usually derives from (Income * LivingRatio).
-            // Let's stick to user request: Income - InvestTarget - FixedCosts
-            const investTarget = Math.floor(inc * (investRatio / 100));
-            const totalFixed = s + l + i;
-            const realAvailable = Math.max(0, inc - investTarget - totalFixed);
-            setText('dispRealAvailable', formatCurrency(realAvailable));
-
-            // Date Projection
-            const gap = appState.target - total;
-            const est = inc - appState.currentBudget - l;
-            const daysEl = document.getElementById('dispDays');
-            if (gap <= 0) daysEl.innerText = "已達成";
-            else if (est <= 0) daysEl.innerText = "無限期";
-            else daysEl.innerText = Math.ceil((gap / est) * 30).toLocaleString() + " 天";
-
-            const recReq = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result));
-            const recEl = document.getElementById('historyTableBody');
-            if (recEl) { recEl.innerHTML = ''; recReq.sort((a, b) => b.id - a.id).forEach(r => { recEl.innerHTML += `<tr><td>${r.date}</td><td>${formatCurrency(r.spend)}</td><td><span class="badge ${r.status === 'bad' ? 'bg-danger' : 'bg-success'}">${r.msg}</span></td></tr>`; }); }
-
-            // Chart V7.0 Logic: Historical Review (Actual Data from Records)
-            // Need to reconstruct asset history based on records
-            // Concept: Start with Current Total Assets. Go back month by month.
-            // Asset[PrevMonth] = Asset[CurrentMonth] - AssetChange[CurrentMonth]
-
-            const chartLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-            const chartData = new Array(12).fill(null); // Values for 12 months
-
-            const currentMonthIdx = new Date().getMonth(); // 0-11
-            let runningAsset = total; // Current total assets
-
-            // Fill current month
-            chartData[currentMonthIdx] = runningAsset;
-
-            // Group records by month (simplified: assumes records are from this year)
-            // We need to subtract changes to find previous months' ending balance.
-            // Filter records for this year
-            const currentYear = new Date().getFullYear();
-            const yearRecords = recReq.filter(r => {
-                const d = new Date(r.date);
-                return d.getFullYear() === currentYear;
-            });
-
-            // Calculate backwards from current month
-            for (let m = currentMonthIdx; m > 0; m--) {
-                // Find records that happened in month 'm'
-                // To get Month M-1 balance, we subtract the changes that happened in Month M
-                // Wait, records store 'date'. If I am at end of Feb (m=1), Asset is X.
-                // Records in Feb contributed to this X. 
-                // So Jan End Asset = Feb End Asset - (Sum of Feb AssetChanges).
-
-                const monthRecords = yearRecords.filter(r => new Date(r.date).getMonth() === m);
-                const monthlyChange = monthRecords.reduce((sum, r) => sum + r.assetChange, 0);
-
-                // Previous month balance
-                runningAsset -= monthlyChange;
-                chartData[m - 1] = runningAsset;
-            }
-
-            // Note: Future months remain null (don't show line)
-
-            const ctx = document.getElementById('growthChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartLabels,
-                    datasets: [
-                        {
-                            label: '實際總資產',
-                            data: chartData,
-                            borderColor: '#0d6efd',
-                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                            tension: 0.3,
-                            fill: true,
-                            spanGaps: true // Connect points if gaps
-                        },
-                        {
-                            label: '目標線',
-                            data: new Array(12).fill(appState.target),
-                            borderColor: '#dc3545',
-                            borderDash: [5, 5],
-                            tension: 0,
-                            fill: false,
-                            pointRadius: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { stacked: false } }
-                }
-            });
-
-            // Asset Bar (Only 3: Stock, Cash)
-            const grand = total > 0 ? total : 1;
-
-            // Calculate allocation percentages (stocks, cash, fixed)
-            const stockPct = Math.round((sv / grand) * 100);
-            const cashPct = Math.round((appState.cash / grand) * 100);
-            // Ensure percentages sum to 100 (avoid rounding gaps)
-            const fixedPct = Math.max(0, 100 - stockPct - cashPct);
-
-            const allocBar = document.getElementById('allocProgressBar');
-            if (allocBar) {
-                const bars = allocBar.querySelectorAll('.progress-bar');
-                if (bars[0]) bars[0].style.width = stockPct + '%';
-                if (bars[1]) bars[1].style.width = cashPct + '%';
-                if (bars[2]) bars[2].style.width = fixedPct + '%';
-            }
-            setText('allocPercentText', `股票 ${stockPct}% · 現金 ${cashPct}% · 固定 ${fixedPct}%`);
-
-            // Calculate liabilities (use stored totalAmount for loans) and net worth
-            const totalLiabilities = loans.reduce((acc, l) => acc + (l.totalAmount || 0), 0);
-            const netWorth = total - totalLiabilities;
-
-            // Update small summary boxes
-            setText('valTotalAssets', formatCurrency(total));
-            setText('valTotalLiabilities', formatCurrency(totalLiabilities));
-            setText('valNetWorth', formatCurrency(netWorth));
-
-            // Update debt progress (loan vs net asset)
-            const debtBar = document.getElementById('debtProgressBar');
-            const debtBase = Math.max(1, totalLiabilities + Math.max(0, netWorth));
-            const loanWidth = Math.round((totalLiabilities / debtBase) * 100);
-            const netWidth = Math.max(0, 100 - loanWidth);
-            if (debtBar) {
-                const dbars = debtBar.querySelectorAll('.progress-bar');
-                if (dbars[0]) dbars[0].style.width = loanWidth + '%';
-                if (dbars[1]) dbars[1].style.width = netWidth + '%';
-            }
-
-            const debtPercentLabel = Math.round((totalLiabilities / Math.max(1, total)) * 100);
-            setText('debtRatioText', `${debtPercentLabel}%`);
+            let sv = 0, cv = 0; const el = document.getElementById('stockTableBody'); if (el) el.innerHTML = '';
+            stocks.forEach(s => { const r = s.symbol.includes('.TW') ? 1 : usdTwdRate; const v = s.currentPrice * s.shares * r; const c = s.cost * s.shares * r; sv += v; cv += c; const pnl = v - c; const pp = c > 0 ? (pnl / c) * 100 : 0; const cls = pnl >= 0 ? 'text-up' : 'text-down'; const ico = pnl >= 0 ? 'fa-caret-up' : 'fa-caret-down'; if (el) el.innerHTML += `<tr><td><div class="fw-bold">${s.symbol}</div><small class="text-muted">${s.shares}股</small></td><td class="text-end"><div class="fw-bold">${s.symbol.includes('.TW') ? 'NT$' : 'US$'} ${s.currentPrice.toFixed(2)}</div><small class="text-muted">均 ${s.cost}</small></td><td class="text-end"><div>NT$ ${formatCurrency(v)}</div><small class="${cls}"><i class="fas ${ico}"></i> NT$ ${formatCurrency(pnl)} (${pp.toFixed(1)}%)</small></td><td class="text-center"><button class="btn-icon btn-delete" onclick="deleteStock(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`; });
+            setText('totalStockValue', formatCurrency(sv)); const liquid = appState.cash + sv; const total = liquid + appState.fixed; setText('dispTotalAssets', formatCurrency(total));
+            const pnlT = sv - cv; const ps = pnlT >= 0 ? '+' : ''; setText('dispTotalAssetsSub', `含現金 ${formatCurrency(appState.cash)} 及股票損益 ${ps}${formatCurrency(pnlT)}`);
+            const inc = appState.active + appState.passive; const investRatio = appState.ratioInvest || 30;
+            setText('dispInvestTarget', formatCurrency(Math.floor(inc * (investRatio / 100)))); setText('dispInvestRatio', `依照收入占比 ${investRatio}%`);
+            const now = new Date(); const activeLoans = loans.filter(l => { if (!l.startDate || !l.endDate) return true; const start = new Date(l.startDate); const end = new Date(l.endDate); return start <= now && now <= end; });
+            const l = activeLoans.reduce((a, b) => a + b.monthlyPayment, 0); const s = subscriptions.reduce((a, b) => a + b.amount, 0); const i = insurances.reduce((a, b) => a + (b.freq === 12 ? b.amount / 12 : b.amount), 0);
+            const netB = Math.max(0, appState.currentBudget - s - i); setText('dispCurrentBudget', formatCurrency(netB)); setText('lblFixedMonthly', formatCurrency(s + l + i));
+            const investTarget = Math.floor(inc * (investRatio / 100)); const totalFixed = s + l + i; const realAvailable = Math.max(0, inc - investTarget - totalFixed); setText('dispRealAvailable', formatCurrency(realAvailable));
+            const gap = appState.target - total; const est = inc - appState.currentBudget - l; const daysEl = document.getElementById('dispDays'); if (gap <= 0) daysEl.innerText = "已達成"; else if (est <= 0) daysEl.innerText = "無限期"; else daysEl.innerText = Math.ceil((gap / est) * 30).toLocaleString() + " 天";
+            const recReq = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result)); const recEl = document.getElementById('historyTableBody'); if (recEl) { recEl.innerHTML = ''; recReq.sort((a, b) => b.id - a.id).forEach(r => { recEl.innerHTML += `<tr><td>${r.date}</td><td>${formatCurrency(r.spend)}</td><td><span class="badge ${r.status === 'bad' ? 'bg-danger' : 'bg-success'}">${r.msg}</span></td></tr>`; }); }
+            
+            // Chart Logic
+            const chartLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']; const chartData = new Array(12).fill(null); const currentMonthIdx = new Date().getMonth(); let runningAsset = total; chartData[currentMonthIdx] = runningAsset; const currentYear = new Date().getFullYear(); const yearRecords = recReq.filter(r => { const d = new Date(r.date); return d.getFullYear() === currentYear; }); for (let m = currentMonthIdx; m > 0; m--) { const monthRecords = yearRecords.filter(r => new Date(r.date).getMonth() === m); const monthlyChange = monthRecords.reduce((sum, r) => sum + r.assetChange, 0); runningAsset -= monthlyChange; chartData[m - 1] = runningAsset; }
+            const ctx = document.getElementById('growthChart').getContext('2d'); if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, { type: 'line', data: { labels: chartLabels, datasets: [{ label: '實際總資產', data: chartData, borderColor: '#0d6efd', backgroundColor: 'rgba(13, 110, 253, 0.1)', tension: 0.3, fill: true, spanGaps: true }, { label: '目標線', data: new Array(12).fill(appState.target), borderColor: '#dc3545', borderDash: [5, 5], tension: 0, fill: false, pointRadius: 0 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { stacked: false } } } });
+            
+            // Stats Update
+            const grand = total > 0 ? total : 1; const stockPct = Math.round((sv / grand) * 100); const cashPct = Math.round((appState.cash / grand) * 100); const fixedPct = Math.max(0, 100 - stockPct - cashPct); const allocBar = document.getElementById('allocProgressBar'); if (allocBar) { const bars = allocBar.querySelectorAll('.progress-bar'); if (bars[0]) bars[0].style.width = stockPct + '%'; if (bars[1]) bars[1].style.width = cashPct + '%'; if (bars[2]) bars[2].style.width = fixedPct + '%'; } setText('allocPercentText', `股票 ${stockPct}% · 現金 ${cashPct}% · 固定 ${fixedPct}%`);
+            const totalLiabilities = loans.reduce((acc, l) => acc + (l.totalAmount || 0), 0); const netWorth = total - totalLiabilities; setText('valTotalAssets', formatCurrency(total)); setText('valTotalLiabilities', formatCurrency(totalLiabilities)); setText('valNetWorth', formatCurrency(netWorth));
+            const debtBar = document.getElementById('debtProgressBar'); const debtBase = Math.max(1, totalLiabilities + Math.max(0, netWorth)); const loanWidth = Math.round((totalLiabilities / debtBase) * 100); const netWidth = Math.max(0, 100 - loanWidth); if (debtBar) { const dbars = debtBar.querySelectorAll('.progress-bar'); if (dbars[0]) dbars[0].style.width = loanWidth + '%'; if (dbars[1]) dbars[1].style.width = netWidth + '%'; } const debtPercentLabel = Math.round((totalLiabilities / Math.max(1, total)) * 100); setText('debtRatioText', `${debtPercentLabel}%`);
         }
 
         function formatCurrency(n) { return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(n); }
+
+        // ==========================================
+        // AI AGENT LOGIC
+        // ==========================================
+        function toggleChat() {
+            const win = document.getElementById('chatWindow');
+            if(win.style.display === 'flex') {
+                win.style.display = 'none';
+                win.classList.remove('active');
+            } else {
+                win.style.display = 'flex';
+                win.classList.add('active');
+                scrollToBottom();
+            }
+        }
+
+        function scrollToBottom() {
+            const body = document.getElementById('chatBody');
+            body.scrollTop = body.scrollHeight;
+        }
+
+        function resetChat() {
+            chatHistory = [];
+            document.getElementById('chatBody').innerHTML = `
+                <div class="msg-ai message">
+                    對話紀錄已清除。我是你的 AI 理財助手，隨時準備好為您服務。
+                </div>`;
+        }
+
+        function handleChatKey(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+
+        async function getFinancialContext() {
+            // Recalculate basic totals for context
+            let stockVal = 0;
+            stocks.forEach(s => {
+                const r = s.symbol.includes('.TW') ? 1 : usdTwdRate;
+                stockVal += s.currentPrice * s.shares * r;
+            });
+            const totalAssets = appState.cash + stockVal + appState.fixed;
+            const totalLoans = loans.reduce((acc, l) => acc + (l.totalAmount || 0), 0);
+            const netWorth = totalAssets - totalLoans;
+            
+            // Get last 5 records
+            const allRecords = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result));
+            const recentRecords = allRecords.sort((a, b) => b.id - a.id).slice(0, 5);
+
+            return JSON.stringify({
+                profile: {
+                    activeIncome: appState.active,
+                    passiveIncome: appState.passive,
+                    targetAsset: appState.target
+                },
+                assets: {
+                    cash: appState.cash,
+                    stockValue: stockVal,
+                    fixedAssets: appState.fixed,
+                    total: totalAssets,
+                    netWorth: netWorth
+                },
+                liabilities: {
+                    totalLoans: totalLoans,
+                    loansDetail: loans.map(l => ({name: l.name, remaining: l.totalAmount, monthly: l.monthlyPayment}))
+                },
+                expenses: {
+                    subscriptions: subscriptions,
+                    insurance: insurances
+                },
+                portfolio: stocks.map(s => ({symbol: s.symbol, shares: s.shares, cost: s.cost, price: s.currentPrice})),
+                recentHistory: recentRecords
+            });
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const userText = input.value.trim();
+            const apiKey = appState.apiKey;
+
+            if (!userText) return;
+            if (!apiKey) {
+                appendMessage('user', userText);
+                appendMessage('ai', '請先至設定頁面輸入 Gemini API Key。');
+                input.value = '';
+                return;
+            }
+
+            // UI Update
+            appendMessage('user', userText);
+            input.value = '';
+            document.getElementById('typingIndicator').style.display = 'block';
+            scrollToBottom();
+
+            try {
+                // Prepare Context (Modified Prompt Logic)
+                let systemPrompt = "你是一位專業的理財顧問，請用繁體中文回答。你擁有用戶的完整財務數據（JSON），但請遵循以下互動原則：\n" +
+                    "1. **優先回應當下意圖**：如果用戶輸入簡單招呼或不明確內容（如 '123'、'你好'），請先禮貌回應或釐清需求，**不要**直接輸出長篇財務分析。\n" +
+                    "2. **依需使用數據**：只有當用戶詢問財務狀況、預算或投資建議時，才引用 JSON 數據進行深入分析。\n" +
+                    "3. **提供具體建議**：回答應簡潔有力，使用 Markdown 格式（如列表、粗體）。";
+
+                if (appState.aiAutoContext) {
+                    const contextData = await getFinancialContext();
+                    systemPrompt += `\n\n[目前用戶財務數據 JSON]:\n${contextData}\n\n請根據以上數據回答用戶問題。`;
+                }
+
+                // Construct History
+                const messages = [
+                    { role: "user", parts: [{ text: systemPrompt }] },
+                    { role: "model", parts: [{ text: "收到，我會依照您的指示，先釐清問題再進行分析。請隨時提問。" }] }
+                ];
+
+                // Append local history (limit last 10 turns to save tokens)
+                chatHistory.slice(-10).forEach(msg => {
+                    messages.push({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
+                });
+                
+                // Add current message
+                messages.push({ role: "user", parts: [{ text: userText }] });
+
+                // Call API
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${appState.aiModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: messages })
+                });
+
+                const data = await response.json();
+                
+                document.getElementById('typingIndicator').style.display = 'none';
+
+                if (data.error) {
+                    appendMessage('ai', `API Error: ${data.error.message}`);
+                } else {
+                    const aiText = data.candidates[0].content.parts[0].text;
+                    appendMessage('ai', aiText);
+                    
+                    // Save to local history
+                    chatHistory.push({ role: 'user', text: userText });
+                    chatHistory.push({ role: 'ai', text: aiText });
+                }
+
+            } catch (e) {
+                document.getElementById('typingIndicator').style.display = 'none';
+                appendMessage('ai', `連線錯誤: ${e.message}`);
+            }
+        }
+
+        function appendMessage(role, text) {
+            const chatBody = document.getElementById('chatBody');
+            const div = document.createElement('div');
+            div.className = `message ${role === 'user' ? 'msg-user' : 'msg-ai'}`;
+            
+            // Parse Markdown for AI, plain text for User
+            if (role === 'ai') {
+                div.innerHTML = marked.parse(text);
+            } else {
+                div.innerText = text;
+            }
+            
+            chatBody.appendChild(div);
+            scrollToBottom();
+        }
     </script>
 </body>
-
 </html>

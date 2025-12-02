@@ -362,7 +362,7 @@
             position: fixed;
             bottom: 90px;
             right: 20px;
-            width: 580px;
+            width: 380px;
             height: 550px;
             max-width: 90vw;
             /* Responsive width */
@@ -481,8 +481,17 @@
             padding: 4px;
         }
 
-        .msg-ai th {
+                .msg-ai th {
             background: #f3f4f6;
+        }
+
+        /* Onboarding Styles */
+        .wizard-step {
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -961,6 +970,104 @@
         </div>
     </div>
 
+    <!-- Onboarding Modal -->
+    <div class="modal fade" id="onboardingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-body p-0">
+                    <div class="row g-0">
+                        <div class="col-md-5 bg-primary text-white p-5 d-flex flex-column justify-content-center align-items-center text-center">
+                            <i class="fas fa-rocket fa-4x mb-4"></i>
+                            <h4 class="fw-bold">歡迎使用 AssetGuardian</h4>
+                            <p class="opacity-75">您的個人智慧資產管家。讓我們花一點時間設定您的財務目標。</p>
+                        </div>
+                        <div class="col-md-7 p-5">
+                            <!-- Screen 1: Welcome -->
+                            <div id="ob-screen-welcome">
+                                <h5 class="fw-bold mb-4 text-primary">您好！請問您是...</h5>
+                                <div class="d-grid gap-3">
+                                    <button class="btn btn-outline-primary p-3 text-start" onclick="startWizard()">
+                                        <div class="fw-bold"><i class="fas fa-user-plus me-2"></i> 我是新用戶</div>
+                                        <small class="text-muted">我想要建立新的財務規劃</small>
+                                    </button>
+                                    <button class="btn btn-outline-secondary p-3 text-start" onclick="showImportScreen()">
+                                        <div class="fw-bold"><i class="fas fa-file-import me-2"></i> 我是舊用戶</div>
+                                        <small class="text-muted">我已經有備份檔案 (.json)</small>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Screen 2: Import -->
+                            <div id="ob-screen-import" style="display:none;">
+                                <h5 class="fw-bold mb-4 text-secondary"><i class="fas fa-file-import me-2"></i>匯入備份</h5>
+                                <p class="text-muted small">請選擇您之前匯出的 .json 備份檔案。</p>
+                                <input type="file" id="inpObImport" class="form-control mb-3" accept=".json">
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-light" onclick="showWelcomeScreen()">返回</button>
+                                    <button class="btn btn-primary" onclick="handleObImport()">匯入並開始</button>
+                                </div>
+                            </div>
+
+                            <!-- Screen 3: Wizard -->
+                            <div id="ob-screen-wizard" style="display:none;">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h5 class="fw-bold text-primary mb-0" id="ob-wizard-title">步驟 1/3</h5>
+                                    <span class="badge bg-light text-primary border" id="ob-wizard-step-badge">1 / 3</span>
+                                </div>
+                                
+                                <!-- Step 1: Income -->
+                                <div class="wizard-step" id="ob-step-1">
+                                    <h6 class="fw-bold mb-3">您的收入與目標</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">每月主動收入 (薪資等)</label>
+                                        <input type="number" id="obInpActive" class="form-control" placeholder="例如: 50000">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">每月被動收入 (股利/房租)</label>
+                                        <input type="number" id="obInpPassive" class="form-control" placeholder="例如: 0">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">目標總資產</label>
+                                        <input type="number" id="obInpTarget" class="form-control" placeholder="例如: 10000000" value="10000000">
+                                    </div>
+                                </div>
+
+                                <!-- Step 2: Ratios -->
+                                <div class="wizard-step" id="ob-step-2" style="display:none;">
+                                    <h6 class="fw-bold mb-3">預算分配</h6>
+                                    <p class="small text-muted">您希望將多少比例的收入用於生活開銷？(剩餘將用於投資與儲蓄)</p>
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span>生活開銷占比</span>
+                                        <span class="fw-bold text-primary" id="obValRatio">60%</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="obRngRatio" min="10" max="90" step="5" value="60" oninput="document.getElementById('obValRatio').innerText = this.value + '%'">
+                                </div>
+
+                                <!-- Step 3: Assets -->
+                                <div class="wizard-step" id="ob-step-3" style="display:none;">
+                                    <h6 class="fw-bold mb-3">初始資產盤點</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">目前現金/存款</label>
+                                        <input type="number" id="obInpCash" class="form-control" placeholder="0">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">固定資產 (房/車估值)</label>
+                                        <input type="number" id="obInpFixed" class="form-control" placeholder="0">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button class="btn btn-light" id="btnObBack" onclick="prevWizardStep()">上一步</button>
+                                    <button class="btn btn-primary px-4" id="btnObNext" onclick="nextWizardStep()">下一步</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const DB_NAME = 'AssetPlannerDB';
         const DB_VERSION = 8; // Bump version for Chat History
@@ -1000,7 +1107,7 @@
                     }
                 }
                 if (stocks.length > 0) refreshStockPrices(); else renderDashboard(); await loadChatHistory();
-                if (!appState.isSetup) openSettings();
+                if (!appState.isSetup) openOnboarding();
             } catch (e) { console.error("DB Error:", e); }
         };
 
@@ -1140,7 +1247,122 @@
             if (x.type === "password") x.type = "text"; else x.type = "password";
         }
 
-        function openStockModal() { stockModal.show(); }
+                function openStockModal() { stockModal.show(); }
+
+        // --- Onboarding Logic ---
+        let obModal;
+        let currentWizardStep = 1;
+
+        function openOnboarding() {
+            obModal = new bootstrap.Modal(document.getElementById('onboardingModal'));
+            obModal.show();
+        }
+
+        function showWelcomeScreen() {
+            document.getElementById('ob-screen-welcome').style.display = 'block';
+            document.getElementById('ob-screen-import').style.display = 'none';
+            document.getElementById('ob-screen-wizard').style.display = 'none';
+        }
+
+        function showImportScreen() {
+            document.getElementById('ob-screen-welcome').style.display = 'none';
+            document.getElementById('ob-screen-import').style.display = 'block';
+        }
+
+        function handleObImport() {
+            const input = document.getElementById('inpObImport');
+            if (input.files.length > 0) {
+                importData(input);
+                // importData reloads the page, so no need to close modal manually
+            } else {
+                alert("請選擇檔案");
+            }
+        }
+
+        function startWizard() {
+            document.getElementById('ob-screen-welcome').style.display = 'none';
+            document.getElementById('ob-screen-wizard').style.display = 'block';
+            currentWizardStep = 1;
+            renderWizardStep();
+        }
+
+        function renderWizardStep() {
+            document.querySelectorAll('.wizard-step').forEach(el => el.style.display = 'none');
+            document.getElementById(`ob-step-${currentWizardStep}`).style.display = 'block';
+            
+            document.getElementById('ob-wizard-title').innerText = `步驟 ${currentWizardStep}/3`;
+            document.getElementById('ob-wizard-step-badge').innerText = `${currentWizardStep} / 3`;
+
+            const btnBack = document.getElementById('btnObBack');
+            const btnNext = document.getElementById('btnObNext');
+
+            if (currentWizardStep === 1) {
+                btnBack.innerText = "取消";
+                btnBack.onclick = showWelcomeScreen;
+            } else {
+                btnBack.innerText = "上一步";
+                btnBack.onclick = prevWizardStep;
+            }
+
+            if (currentWizardStep === 3) {
+                btnNext.innerText = "完成設定";
+                btnNext.onclick = finishWizard;
+            } else {
+                btnNext.innerText = "下一步";
+                btnNext.onclick = nextWizardStep;
+            }
+        }
+
+        function nextWizardStep() {
+            if (currentWizardStep < 3) {
+                currentWizardStep++;
+                renderWizardStep();
+            }
+        }
+
+        function prevWizardStep() {
+            if (currentWizardStep > 1) {
+                currentWizardStep--;
+                renderWizardStep();
+            }
+        }
+
+        async function finishWizard() {
+            // Gather Data
+            const active = parseFloat(document.getElementById('obInpActive').value) || 0;
+            const passive = parseFloat(document.getElementById('obInpPassive').value) || 0;
+            const target = parseFloat(document.getElementById('obInpTarget').value) || 10000000;
+            const ratioLiving = parseInt(document.getElementById('obRngRatio').value);
+            const cash = parseFloat(document.getElementById('obInpCash').value) || 0;
+            const fixed = parseFloat(document.getElementById('obInpFixed').value) || 0;
+
+            // Update App State
+            appState.active = active;
+            appState.passive = passive;
+            appState.target = target;
+            appState.ratioLiving = ratioLiving;
+            appState.ratioInvest = 100 - ratioLiving - 10; // Simple default: leave 10% for debt/buffer
+            if (appState.ratioInvest < 0) appState.ratioInvest = 0;
+            
+            appState.cash = cash;
+            appState.fixed = fixed;
+            appState.isSetup = true;
+
+            // Save
+            await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x);
+            
+            // Close and Render
+            obModal.hide();
+            calcAllocations();
+            renderDashboard();
+            
+            // Optional: Trigger a welcome chat
+            setTimeout(() => {
+                toggleChat();
+                saveChatMessage('ai', '歡迎使用 AssetGuardian！我已根據您的設定完成初始化。您可以隨時問我關於財務規劃的問題。');
+                appendMessage('ai', '歡迎使用 AssetGuardian！我已根據您的設定完成初始化。您可以隨時問我關於財務規劃的問題。');
+            }, 1000);
+        }
 
         // --- CRUD Ops ---
         async function addInsurance() { const n = document.getElementById('inpInsName').value; const f = parseInt(document.getElementById('inpInsFreq').value); const a = parseFloat(document.getElementById('inpInsAmount').value); if (!n || isNaN(a)) return; await new Promise(r => getStore('insurance', 'readwrite').add({ name: n, freq: f, amount: a }).onsuccess = r); document.getElementById('inpInsName').value = ''; document.getElementById('inpInsAmount').value = ''; await refreshInsurance(); }

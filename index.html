@@ -13,6 +13,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Driver.js -->
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
     <!-- Marked.js for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -32,7 +35,6 @@
             background-color: var(--bg-body);
             font-family: 'Segoe UI', "Microsoft JhengHei", sans-serif;
             color: var(--primary-color);
-            padding-bottom: 80px;
         }
 
         .navbar {
@@ -143,13 +145,12 @@
             border: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             overflow: hidden;
-            height: 100%;
         }
 
         .card-header-gradient {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 20px;
+            padding: 16px;
         }
 
         /* Table Styles */
@@ -362,7 +363,7 @@
             position: fixed;
             bottom: 90px;
             right: 20px;
-            width: 380px;
+            width: 480px;
             height: 550px;
             max-width: 90vw;
             /* Responsive width */
@@ -481,7 +482,7 @@
             padding: 4px;
         }
 
-                .msg-ai th {
+        .msg-ai th {
             background: #f3f4f6;
         }
 
@@ -489,9 +490,71 @@
         .wizard-step {
             animation: fadeIn 0.3s ease;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-tip-bubble {
+            position: fixed;
+            bottom: 90px;
+            right: 80px;
+            /* Left of the chat button */
+            background: #2c3e50;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            max-width: 250px;
+            cursor: pointer;
+            z-index: 1040;
+            animation: slideInRight 0.5s ease;
+        }
+
+        .ai-tip-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: 20px;
+            right: -10px;
+            border-width: 10px 0 10px 10px;
+            border-style: solid;
+            border-color: transparent transparent transparent #2c3e50;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .typing-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #fff;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
         }
     </style>
 </head>
@@ -507,6 +570,9 @@
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="openStockModal()">
                     <i class="fas fa-plus me-1"></i> 持股
+                </button>
+                <button class="btn btn-outline-info btn-sm rounded-pill px-3 me-1" onclick="startTour()">
+                    <i class="fas fa-question-circle me-1"></i> 導覽
                 </button>
                 <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="openSettings()">
                     <i class="fas fa-sliders-h me-1"></i> 財務規劃
@@ -560,8 +626,7 @@
                         <button class="btn btn-light btn-sm text-primary fw-bold" onclick="refreshStockPrices()"
                             id="btnRefreshStocks"><i class="fas fa-sync-alt me-1" id="iconRefresh"></i> 更新</button>
                     </div>
-                    <div class="p-0 table-responsive"
-                        style="height: calc(100vh - 350px); min-height: 400px; overflow-y: auto;">
+                    <div class="p-0 table-responsive" style="height: 55vh; overflow-y: auto;">
                         <table class="table table-custom table-hover mb-0">
                             <thead class="sticky-top bg-light">
                                 <tr>
@@ -605,18 +670,17 @@
                                     class="form-select form-select-sm bg-light border-0"></select></div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small text-muted">本月吃喝玩樂金額：</label>
+                            <label class="form-label small text-muted">當月結算花費</label>
                             <div class="input-group"><span class="input-group-text bg-light border-0"><i
                                         class="fas fa-wallet"></i></span><input type="number" id="inpMonthSpend"
-                                    class="form-control bg-light border-0" placeholder="本月吃喝玩樂金額"></div>
+                                    class="form-control bg-light border-0" placeholder="金額"></div>
                         </div>
                         <button class="btn btn-primary w-100 rounded-3 shadow-sm" onclick="settleMonth()">確認結算</button>
                     </div>
-                    <div class="p-0" style="height: 300px; overflow-y: auto;">
-                        <div class="px-3 py-2 bg-light border-bottom small fw-bold text-muted">歷史紀錄</div>
-                        <table class="table table-sm table-custom mb-0" style="font-size: 0.85rem;">
-                            <tbody id="historyTableBody"></tbody>
-                        </table>
+                    <div class="p-3 border-top mt-auto">
+                        <button class="btn btn-outline-secondary w-100 rounded-3" onclick="openHistoryModal()">
+                            <i class="fas fa-history me-2"></i>查看歷史紀錄
+                        </button>
                     </div>
                 </div>
             </div>
@@ -667,6 +731,19 @@
         </div>
     </div>
 
+    <!-- AI Tip Bubble -->
+    <div id="aiTipBubble" class="ai-tip-bubble" onclick="openTipDetail()" style="display: none;">
+        <div class="d-flex align-items-start">
+            <i class="fas fa-lightbulb text-warning me-2 mt-1"></i>
+            <div>
+                <div class="fw-bold small mb-1">AI 貼心提示</div>
+                <div id="aiTipContent" class="small">正在分析您的財務狀況...</div>
+            </div>
+            <button class="btn-close btn-close-white ms-2 small"
+                onclick="event.stopPropagation(); closeTipBubble()"></button>
+        </div>
+    </div>
+
     <!-- AI Chat Widget -->
     <div class="chat-widget-btn" onclick="toggleChat()" title="AI 理財助手">
         <i class="fas fa-robot"></i>
@@ -697,6 +774,40 @@
             <button class="btn btn-primary rounded-circle" onclick="sendChatMessage()"
                 style="width: 40px; height: 40px; padding: 0; background: #2c3e50 ; border-color: #2c3e50 ;"><i
                     class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow" style="height: 80vh;">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-history me-2 text-secondary"></i>歷史紀錄</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">顯示最近的交易紀錄</span>
+                        <span class="badge bg-secondary" id="historyCountBadge">0 筆</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="bg-white sticky-top text-secondary small text-uppercase">
+                                <tr>
+                                    <th class="border-bottom ps-4 py-3">日期</th>
+                                    <th class="border-bottom py-3">花費金額</th>
+                                    <th class="border-bottom py-3">結算狀態</th>
+                                    <th class="border-bottom py-3 text-end pe-4">資產變動</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody" class="border-0"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">關閉</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -837,7 +948,8 @@
                                         class="d-flex justify-content-between align-items-center mb-2 small px-2 bg-light border rounded py-1">
                                         <span class="text-muted">建議上限(30%): <span id="calcSafeLoan30"
                                                 class="fw-bold">$0</span></span><span class="text-muted">狀態: <span
-                                                id="calcLoanStatus" class="fw-bold">--</span></span></div>
+                                                id="calcLoanStatus" class="fw-bold">--</span></span>
+                                    </div>
                                     <div id="loanList" style="max-height: 150px; overflow-y: auto;"></div>
                                 </div>
                                 <!-- Insurance Tab -->
@@ -976,7 +1088,8 @@
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-body p-0">
                     <div class="row g-0">
-                        <div class="col-md-5 bg-primary text-white p-5 d-flex flex-column justify-content-center align-items-center text-center">
+                        <div
+                            class="col-md-5 bg-primary text-white p-5 d-flex flex-column justify-content-center align-items-center text-center">
                             <i class="fas fa-rocket fa-4x mb-4"></i>
                             <h4 class="fw-bold">歡迎使用 AssetGuardian</h4>
                             <p class="opacity-75">您的個人智慧資產管家。讓我們花一點時間設定您的財務目標。</p>
@@ -990,7 +1103,8 @@
                                         <div class="fw-bold"><i class="fas fa-user-plus me-2"></i> 我是新用戶</div>
                                         <small class="text-muted">我想要建立新的財務規劃</small>
                                     </button>
-                                    <button class="btn btn-outline-secondary p-3 text-start" onclick="showImportScreen()">
+                                    <button class="btn btn-outline-secondary p-3 text-start"
+                                        onclick="showImportScreen()">
                                         <div class="fw-bold"><i class="fas fa-file-import me-2"></i> 我是舊用戶</div>
                                         <small class="text-muted">我已經有備份檔案 (.json)</small>
                                     </button>
@@ -1012,15 +1126,17 @@
                             <div id="ob-screen-wizard" style="display:none;">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h5 class="fw-bold text-primary mb-0" id="ob-wizard-title">步驟 1/3</h5>
-                                    <span class="badge bg-light text-primary border" id="ob-wizard-step-badge">1 / 3</span>
+                                    <span class="badge bg-light text-primary border" id="ob-wizard-step-badge">1 /
+                                        3</span>
                                 </div>
-                                
+
                                 <!-- Step 1: Income -->
                                 <div class="wizard-step" id="ob-step-1">
                                     <h6 class="fw-bold mb-3">您的收入與目標</h6>
                                     <div class="mb-3">
                                         <label class="form-label small text-muted">每月主動收入 (薪資等)</label>
-                                        <input type="number" id="obInpActive" class="form-control" placeholder="例如: 50000">
+                                        <input type="number" id="obInpActive" class="form-control"
+                                            placeholder="例如: 50000">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small text-muted">每月被動收入 (股利/房租)</label>
@@ -1028,7 +1144,8 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small text-muted">目標總資產</label>
-                                        <input type="number" id="obInpTarget" class="form-control" placeholder="例如: 10000000" value="10000000">
+                                        <input type="number" id="obInpTarget" class="form-control"
+                                            placeholder="例如: 10000000" value="10000000">
                                     </div>
                                 </div>
 
@@ -1040,7 +1157,9 @@
                                         <span>生活開銷占比</span>
                                         <span class="fw-bold text-primary" id="obValRatio">60%</span>
                                     </label>
-                                    <input type="range" class="form-range" id="obRngRatio" min="10" max="90" step="5" value="60" oninput="document.getElementById('obValRatio').innerText = this.value + '%'">
+                                    <input type="range" class="form-range" id="obRngRatio" min="10" max="90" step="5"
+                                        value="60"
+                                        oninput="document.getElementById('obValRatio').innerText = this.value + '%'">
                                 </div>
 
                                 <!-- Step 3: Assets -->
@@ -1058,7 +1177,8 @@
 
                                 <div class="d-flex justify-content-between mt-4">
                                     <button class="btn btn-light" id="btnObBack" onclick="prevWizardStep()">上一步</button>
-                                    <button class="btn btn-primary px-4" id="btnObNext" onclick="nextWizardStep()">下一步</button>
+                                    <button class="btn btn-primary px-4" id="btnObNext"
+                                        onclick="nextWizardStep()">下一步</button>
                                 </div>
                             </div>
                         </div>
@@ -1108,6 +1228,7 @@
                 }
                 if (stocks.length > 0) refreshStockPrices(); else renderDashboard(); await loadChatHistory();
                 if (!appState.isSetup) openOnboarding();
+                else generateFinancialTip('startup');
             } catch (e) { console.error("DB Error:", e); }
         };
 
@@ -1247,7 +1368,13 @@
             if (x.type === "password") x.type = "text"; else x.type = "password";
         }
 
-                function openStockModal() { stockModal.show(); }
+        function openStockModal() { stockModal.show(); }
+
+        let historyModal;
+        function openHistoryModal() {
+            if (!historyModal) historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+            historyModal.show();
+        }
 
         // --- Onboarding Logic ---
         let obModal;
@@ -1289,7 +1416,7 @@
         function renderWizardStep() {
             document.querySelectorAll('.wizard-step').forEach(el => el.style.display = 'none');
             document.getElementById(`ob-step-${currentWizardStep}`).style.display = 'block';
-            
+
             document.getElementById('ob-wizard-title').innerText = `步驟 ${currentWizardStep}/3`;
             document.getElementById('ob-wizard-step-badge').innerText = `${currentWizardStep} / 3`;
 
@@ -1343,25 +1470,27 @@
             appState.ratioLiving = ratioLiving;
             appState.ratioInvest = 100 - ratioLiving - 10; // Simple default: leave 10% for debt/buffer
             if (appState.ratioInvest < 0) appState.ratioInvest = 0;
-            
+
             appState.cash = cash;
             appState.fixed = fixed;
             appState.isSetup = true;
 
             // Save
             await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x);
-            
+
             // Close and Render
             obModal.hide();
             calcAllocations();
             renderDashboard();
-            
-            // Optional: Trigger a welcome chat
+
+            // Start Tour
             setTimeout(() => {
-                toggleChat();
-                saveChatMessage('ai', '歡迎使用 AssetGuardian！我已根據您的設定完成初始化。您可以隨時問我關於財務規劃的問題。');
-                appendMessage('ai', '歡迎使用 AssetGuardian！我已根據您的設定完成初始化。您可以隨時問我關於財務規劃的問題。');
-            }, 1000);
+                startTour();
+            }, 500);
+
+            // Optional: Trigger a welcome chat (in background)
+            saveChatMessage('ai', '歡迎使用 AssetGuardian！我已根據您的設定完成初始化。您可以隨時問我關於財務規劃的問題。');
+            chatHistory.push({ role: 'ai', text: '歡迎使用 AssetGuardian！我已根據您的設定完成初始化。您可以隨時問我關於財務規劃的問題。' });
         }
 
         // --- CRUD Ops ---
@@ -1372,7 +1501,32 @@
         function calcLoanDetails() { const t = parseFloat(document.getElementById('inpLoanTotal').value) || 0; const r = parseFloat(document.getElementById('inpLoanRate').value) || 0; const m = parseInt(document.getElementById('inpLoanMonths').value) || 0; let p = 0; if (t > 0 && m > 0) { if (r === 0) p = t / m; else { const i = r / 100 / 12; p = t * (i * Math.pow(1 + i, m)) / (Math.pow(1 + i, m) - 1) } } document.getElementById('inpLoanMonthly').value = p; setText('txtLoanMonthly', formatCurrency(Math.round(p))); if (document.getElementById('inpLoanStart').value && m > 0) { const d = new Date(document.getElementById('inpLoanStart').value); d.setMonth(d.getMonth() + m); document.getElementById('inpLoanEnd').value = d.toISOString().split('T')[0] } }
         async function addLoan() { const c = document.getElementById('inpLoanCat').value; const n = document.getElementById('inpLoanName').value; const t = parseFloat(document.getElementById('inpLoanTotal').value); const r = parseFloat(document.getElementById('inpLoanRate').value); const s = document.getElementById('inpLoanStart').value; const e = document.getElementById('inpLoanEnd').value; const m = parseFloat(document.getElementById('inpLoanMonthly').value); if (!n || isNaN(m)) return; await new Promise(x => getStore('loans', 'readwrite').add({ category: c, name: n, totalAmount: t, rate: r, startDate: s, endDate: e, monthlyPayment: m }).onsuccess = x); await refreshLoans(); document.getElementById('inpLoanName').value = '' }
         async function deleteLoan(id) { if (confirm("刪除?")) await new Promise(x => getStore('loans', 'readwrite').delete(id).onsuccess = x); await refreshLoans() }
-        async function refreshLoans() { loans = await new Promise(x => getStore('loans').getAll().onsuccess = e => x(e.target.result)); const el = document.getElementById('loanList'); el.innerHTML = ''; let t = 0; loans.forEach(l => { t += l.monthlyPayment; el.innerHTML += `<div class="sub-item loan-item mb-2 rounded"><div><span class="badge bg-secondary me-2">${l.category}</span><span class="fw-bold">${l.name}</span></div><button class="btn btn-sm text-danger" onclick="deleteLoan(${l.id})"><i class="fas fa-trash-alt"></i></button></div>` }); setText('totalLoanPayment', formatCurrency(t)); calcAllocations(); renderDashboard() }
+        async function refreshLoans() {
+            loans = await new Promise(x => getStore('loans').getAll().onsuccess = e => x(e.target.result));
+            const el = document.getElementById('loanList');
+            el.innerHTML = '';
+            let t = 0;
+            loans.forEach(l => {
+                t += l.monthlyPayment;
+                el.innerHTML += `
+                <div class="sub-item loan-item mb-2 rounded p-2 border">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            <span class="badge bg-secondary me-2">${l.category}</span>
+                            <span class="fw-bold">${l.name}</span>
+                        </div>
+                        <button class="btn btn-sm text-danger" onclick="deleteLoan(${l.id})"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span><i class="fas fa-calendar-alt me-1"></i>${l.startDate} ~ ${l.endDate}</span>
+                        <span class="text-dark fw-bold">$${formatCurrency(l.monthlyPayment)}/月</span>
+                    </div>
+                </div>`;
+            });
+            setText('totalLoanPayment', formatCurrency(t));
+            calcAllocations();
+            renderDashboard();
+        }
 
         async function addSubscription() { const n = document.getElementById('inpSubName').value; const a = parseFloat(document.getElementById('inpSubAmount').value); if (!n || isNaN(a)) return; await new Promise(x => getStore('subscriptions', 'readwrite').add({ name: n, amount: a }).onsuccess = x); document.getElementById('inpSubName').value = ''; document.getElementById('inpSubAmount').value = ''; await refreshSubscriptions() }
         async function removeSubscription(id) { await new Promise(x => getStore('subscriptions', 'readwrite').delete(id).onsuccess = x); await refreshSubscriptions() }
@@ -1444,6 +1598,7 @@
             await new Promise(x => getStore('records', 'readwrite').add({ date: dateStr, spend: v, diff: d, status: d > 0 ? 'bad' : 'good', msg: d > 0 ? '超支' : '結餘', assetChange: sav }).onsuccess = x);
             await new Promise(x => getStore('settings', 'readwrite').put({ id: 'main_config', data: appState }).onsuccess = x);
             document.getElementById('inpMonthSpend').value = ''; renderDashboard();
+            generateFinancialTip('settlement');
         }
 
         async function clearDB() { if (!confirm("清空?")) return; const tx = db.transaction(['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance', 'chat_history'], 'readwrite');['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance', 'chat_history'].forEach(s => tx.objectStore(s).clear()); tx.oncomplete = () => location.reload() }
@@ -1461,7 +1616,25 @@
             const netB = Math.max(0, appState.currentBudget - s - i); setText('dispCurrentBudget', formatCurrency(netB)); setText('lblFixedMonthly', formatCurrency(s + l + i));
             const investTarget = Math.floor(inc * (investRatio / 100)); const totalFixed = s + l + i; const realAvailable = Math.max(0, inc - investTarget - totalFixed); setText('dispRealAvailable', formatCurrency(realAvailable));
             const gap = appState.target - total; const est = inc - appState.currentBudget - l; const daysEl = document.getElementById('dispDays'); if (gap <= 0) daysEl.innerText = "已達成"; else if (est <= 0) daysEl.innerText = "無限期"; else daysEl.innerText = Math.ceil((gap / est) * 30).toLocaleString() + " 天";
-            const recReq = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result)); const recEl = document.getElementById('historyTableBody'); if (recEl) { recEl.innerHTML = ''; recReq.sort((a, b) => b.id - a.id).forEach(r => { recEl.innerHTML += `<tr><td>${r.date}</td><td>${formatCurrency(r.spend)}</td><td><span class="badge ${r.status === 'bad' ? 'bg-danger' : 'bg-success'}">${r.msg}</span></td></tr>`; }); }
+            const recReq = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result));
+            const recEl = document.getElementById('historyTableBody');
+            const countBadge = document.getElementById('historyCountBadge');
+            if (recEl) {
+                recEl.innerHTML = '';
+                if (countBadge) countBadge.innerText = recReq.length + " 筆";
+
+                recReq.sort((a, b) => b.id - a.id).forEach(r => {
+                    const changeClass = r.assetChange >= 0 ? 'text-success' : 'text-danger';
+                    const changeSign = r.assetChange >= 0 ? '+' : '';
+                    recEl.innerHTML += `
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">${r.date}</td>
+                            <td>${formatCurrency(r.spend)}</td>
+                            <td><span class="badge rounded-pill ${r.status === 'bad' ? 'bg-danger' : 'bg-success'}">${r.msg}</span></td>
+                            <td class="text-end pe-4 ${changeClass} fw-bold">${changeSign}${formatCurrency(r.assetChange)}</td>
+                        </tr>`;
+                });
+            }
 
             // Chart Logic
             const chartLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']; const chartData = new Array(12).fill(null); const currentMonthIdx = new Date().getMonth(); let runningAsset = total; chartData[currentMonthIdx] = runningAsset; const currentYear = new Date().getFullYear(); const yearRecords = recReq.filter(r => { const d = new Date(r.date); return d.getFullYear() === currentYear; }); for (let m = currentMonthIdx; m > 0; m--) { const monthRecords = yearRecords.filter(r => new Date(r.date).getMonth() === m); const monthlyChange = monthRecords.reduce((sum, r) => sum + r.assetChange, 0); runningAsset -= monthlyChange; chartData[m - 1] = runningAsset; }
@@ -1664,6 +1837,93 @@
             chatBody.appendChild(div);
             scrollToBottom();
         }
+
+        // --- Tour Logic ---
+        const driver = window.driver.js.driver;
+
+        function startTour() {
+            const driverObj = driver({
+                showProgress: true,
+                steps: [
+                    { popover: { title: '歡迎來到 AssetGuardian', description: '這是您的個人智慧資產管家。讓我帶您快速瀏覽一下介面。' } },
+                    { element: '.row.g-3.mb-4', popover: { title: 'KPI 儀表板', description: '這裡顯示您的總資產、建議投資額、達成目標天數以及本月可用預算。' } },
+                    { element: '.col-lg-5 .dashboard-card', popover: { title: '投資組合', description: '這裡管理您的股票資產。您可以點擊「+ 持股」來新增股票，系統會自動更新股價。' } },
+                    { element: '.col-lg-3 .dashboard-card', popover: { title: '月度結算', description: '每個月底，請在這裡輸入您的實際花費並進行結算。系統會自動計算儲蓄並更新資產。' } },
+                    { element: '.chat-widget-btn', popover: { title: 'AI 理財顧問', description: '有任何財務問題？點擊這裡，AI 顧問隨時為您服務 (需設定 API Key)。' } },
+                    { element: '.navbar .btn-primary', popover: { title: '財務設定', description: '隨時可以在這裡調整您的收入、預算比例和資產目標。' } },
+                    { popover: { title: '準備好了嗎？', description: '接下來您可以：<br>1. 新增您的第一支股票<br>2. 調整詳細設定<br>3. 試著問 AI：「我的財務狀況如何？」' } }
+                ]
+            });
+            driverObj.drive();
+        }
+
+
+        // --- AI Tip Logic ---
+        let currentTipDetail = "";
+
+        function closeTipBubble() {
+            document.getElementById('aiTipBubble').style.display = 'none';
+        }
+
+        function openTipDetail() {
+            closeTipBubble();
+            toggleChat();
+            if (currentTipDetail) {
+                saveChatMessage('ai', currentTipDetail);
+                appendMessage('ai', currentTipDetail);
+                currentTipDetail = "";
+            }
+        }
+
+        async function generateFinancialTip(context = 'startup') {
+            const apiKey = appState.apiKey;
+            if (!apiKey) return;
+
+            const bubble = document.getElementById('aiTipBubble');
+            const content = document.getElementById('aiTipContent');
+
+            // Show Loading
+            bubble.style.display = 'block';
+            content.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div><span class="small ms-2">AI 思考中...</span>';
+
+            const contextData = await getFinancialContext();
+
+            let prompt = "";
+            if (context === 'startup') {
+                prompt = "分析用戶的財務數據 (JSON)。請回傳 JSON 格式：{ \"summary\": \"一句話吸引人的提醒 (20字內)\", \"detail\": \"完整的分析與建議 (Markdown 格式)\" }。針對他們目前的狀態 (例如：高負債、低儲蓄、進展良好) 給予建議。";
+            } else if (context === 'settlement') {
+                prompt = "用戶剛完成月結算。請根據最新的財務數據 (JSON) 回傳 JSON 格式：{ \"summary\": \"針對本月結算結果的一句話短評 (20字內)\", \"detail\": \"完整的月結算分析與建議 (Markdown 格式)\" }。";
+            }
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${appState.aiModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            role: "user",
+                            parts: [{ text: prompt + "\n\n[財務數據]:\n" + contextData }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content) {
+                    const text = data.candidates[0].content.parts[0].text;
+                    const jsonText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const result = JSON.parse(jsonText);
+
+                    if (result.summary && result.detail) {
+                        content.innerText = result.summary;
+                        currentTipDetail = result.detail;
+                        bubble.style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                console.error("AI Tip Error:", e);
+            }
+        }
+
     </script>
 </body>
 

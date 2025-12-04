@@ -28,7 +28,6 @@
             --stock-up: #e63946;
             --stock-down: #2a9d8f;
             --ai-color: #2c3e50;
-            /* Indigo for AI */
         }
 
         body {
@@ -147,8 +146,6 @@
             overflow: hidden;
         }
 
-
-
         /* Table Styles */
         .table-custom th {
             background-color: #f8f9fa;
@@ -228,7 +225,6 @@
             margin-right: 5px;
         }
 
-        /* RWD Layout for Settings Modal */
         .settings-container {
             display: flex;
             height: 100%;
@@ -261,7 +257,6 @@
                 height: auto;
                 overflow-x: auto;
                 overflow-y: hidden;
-                /* Horizontal scroll */
                 border-right: none;
                 border-bottom: 1px solid #dee2e6;
                 padding: 0.5rem;
@@ -362,7 +357,6 @@
             width: 480px;
             height: 550px;
             max-width: 90vw;
-            /* Responsive width */
             background: white;
             border-radius: 16px;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
@@ -460,7 +454,6 @@
             margin-left: 10px;
         }
 
-        /* Markdown styles in chat */
         .msg-ai strong {
             color: #2c3e50;
         }
@@ -503,7 +496,6 @@
             position: fixed;
             bottom: 90px;
             right: 80px;
-            /* Left of the chat button */
             background: #2c3e50;
             color: white;
             padding: 12px 16px;
@@ -588,25 +580,32 @@
 
 <body>
 
-    <nav class="navbar navbar-light mb-4 sticky-top">
-        <div class="container-fluid px-4">
+    <nav class="navbar navbar-expand-lg navbar-light mb-4 sticky-top bg-white">
+        <div class="container-fluid px-3 px-lg-4">
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian <span
-                    class="badge bg-light text-secondary ms-2 border" style="font-size: 0.6em">V7.0 + AI</span>
+                <i class="fas fa-chart-pie text-primary me-2"></i>AssetGuardian 
+                <span class="badge bg-light text-secondary ms-2 border d-none d-sm-inline-block" style="font-size: 0.6em">V7.0 + AI</span>
             </a>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-warning btn-sm rounded-pill px-3 me-1" onclick="showTodayTip()">
-                    <i class="fas fa-lightbulb me-1"></i> 建議
-                </button>
-                <button class="btn btn-outline-success btn-sm rounded-pill px-3" onclick="openStockModal()">
-                    <i class="fas fa-plus me-1"></i> 持股
-                </button>
-                <button class="btn btn-outline-info btn-sm rounded-pill px-3 me-1" onclick="startTour()">
-                    <i class="fas fa-question-circle me-1"></i> 導覽
-                </button>
-                <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="openSettings()">
-                    <i class="fas fa-sliders-h me-1"></i> 財務規劃
-                </button>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <div class="d-flex gap-2 ms-auto mt-3 mt-lg-0 flex-column flex-lg-row">
+                    <button class="btn btn-outline-warning btn-sm rounded-pill px-3 py-2 py-lg-1 text-start text-lg-center" onclick="showTodayTip()">
+                        <i class="fas fa-lightbulb me-2"></i> 建議
+                    </button>
+                    <button class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 py-lg-1 text-start text-lg-center" onclick="openStockModal()">
+                        <i class="fas fa-plus me-2"></i> 持股
+                    </button>
+                    <button class="btn btn-outline-info btn-sm rounded-pill px-3 py-2 py-lg-1 text-start text-lg-center" onclick="startTour()">
+                        <i class="fas fa-question-circle me-2"></i> 導覽
+                    </button>
+                    <button class="btn btn-primary btn-sm rounded-pill px-3 py-2 py-lg-1 shadow-sm text-start text-lg-center" onclick="openSettings()">
+                        <i class="fas fa-sliders-h me-2"></i> 財務規劃
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -861,23 +860,19 @@
                                 <button class="nav-link active" id="tab-income" data-bs-toggle="pill"
                                     data-bs-target="#content-income" type="button"><i
                                         class="fas fa-bullseye"></i>收支配比</button>
-                                <button class="nav-link" id="tab-loan" data-bs-toggle="pill"
-                                    data-bs-target="#content-loan" type="button"><i
-                                        class="fas fa-university"></i>貸款管理</button>
-                                <button class="nav-link" id="tab-ins" data-bs-toggle="pill"
-                                    data-bs-target="#content-ins" type="button"><i
-                                        class="fas fa-shield-alt"></i>保險管理</button>
-                                <button class="nav-link" id="tab-subs" data-bs-toggle="pill"
-                                    data-bs-target="#content-subs" type="button"><i
-                                        class="fas fa-file-invoice"></i>訂閱管理</button>
+                                <button class="nav-link" id="tab-loan" data-bs-toggle="pill" data-bs-target="#content-loan"
+                                    type="button"><i class="fas fa-university"></i>貸款管理</button>
+                                <button class="nav-link" id="tab-ins" data-bs-toggle="pill" data-bs-target="#content-ins"
+                                    type="button"><i class="fas fa-shield-alt"></i>保險管理</button>
+                                <button class="nav-link" id="tab-subs" data-bs-toggle="pill" data-bs-target="#content-subs"
+                                    type="button"><i class="fas fa-file-invoice"></i>訂閱管理</button>
                                 <button class="nav-link" id="tab-assets" data-bs-toggle="pill"
                                     data-bs-target="#content-assets" type="button"><i
                                         class="fas fa-wallet"></i>資產盤點</button>
                                 <button class="nav-link" id="tab-ai" data-bs-toggle="pill" data-bs-target="#content-ai"
                                     type="button" style="color: #2c3e50 ;"><i class="fas fa-robot"></i>AI Agent</button>
                                 <button class="nav-link" id="tab-system" data-bs-toggle="pill"
-                                    data-bs-target="#content-system" type="button"><i
-                                        class="fas fa-cogs"></i>系統</button>
+                                    data-bs-target="#content-system" type="button"><i class="fas fa-cogs"></i>系統</button>
                             </div>
                         </div>
                         <!-- Content -->
@@ -896,9 +891,8 @@
                                         <div class="col-12 text-end text-muted small">總月收入: <span id="dispTotalIncome"
                                                 class="fw-bold">$0</span></div>
                                     </div>
-                                    <div class="mb-4"><label class="form-label fw-bold">目標總資產</label><input
-                                            type="number" id="inpTarget" class="form-control border-warning"
-                                            placeholder="0"></div>
+                                    <div class="mb-4"><label class="form-label fw-bold">目標總資產</label><input type="number"
+                                            id="inpTarget" class="form-control border-warning" placeholder="0"></div>
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">2. 財務配比規劃</h6>
                                     <div class="alert alert-light border p-3">
                                         <div class="mb-3">
@@ -937,8 +931,7 @@
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">貸款專案管理</h6>
                                     <div class="bg-light p-3 rounded mb-3 border">
                                         <div class="row g-2 mb-2">
-                                            <div class="col-4"><select id="inpLoanCat"
-                                                    class="form-select form-select-sm">
+                                            <div class="col-4"><select id="inpLoanCat" class="form-select form-select-sm">
                                                     <option value="房貸">房貸</option>
                                                     <option value="車貸">車貸</option>
                                                     <option value="學貸">學貸</option>
@@ -956,21 +949,20 @@
                                                     placeholder="2.1" oninput="calcLoanDetails()"></div>
                                         </div>
                                         <div class="row g-2 mb-2">
-                                            <div class="col-6"><label class="small text-muted">起始日</label><input
-                                                    type="date" id="inpLoanStart" class="form-control form-control-sm"
+                                            <div class="col-6"><label class="small text-muted">起始日</label><input type="date"
+                                                    id="inpLoanStart" class="form-control form-control-sm"
                                                     oninput="calcLoanDetails()"></div>
                                             <div class="col-6"><label
                                                     class="small text-muted text-primary fw-bold">期數(月)</label><input
-                                                    type="number" id="inpLoanMonths"
-                                                    class="form-control form-control-sm" placeholder="240"
-                                                    oninput="calcLoanDetails()"></div>
+                                                    type="number" id="inpLoanMonths" class="form-control form-control-sm"
+                                                    placeholder="240" oninput="calcLoanDetails()"></div>
                                         </div>
                                         <div class="card bg-white border p-2 mb-2">
                                             <div class="d-flex justify-content-between align-items-center"><span
                                                     class="text-success fw-bold">月還款(本息):</span><span
-                                                    class="fw-bold fs-5 text-success"
-                                                    id="txtLoanMonthly">$0</span><input type="hidden"
-                                                    id="inpLoanMonthly"><input type="hidden" id="inpLoanEnd"></div>
+                                                    class="fw-bold fs-5 text-success" id="txtLoanMonthly">$0</span><input
+                                                    type="hidden" id="inpLoanMonthly"><input type="hidden" id="inpLoanEnd">
+                                            </div>
                                         </div>
                                         <button class="btn btn-primary w-100 btn-sm" onclick="addLoan()">新增貸款</button>
                                     </div>
@@ -1010,10 +1002,10 @@
                                 <!-- Subs Tab -->
                                 <div class="tab-pane fade" id="content-subs">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">訂閱管理</h6>
-                                    <div class="input-group mb-3"><input type="text" id="inpSubName"
-                                            class="form-control" placeholder="項目"><input type="number" id="inpSubAmount"
-                                            class="form-control" placeholder="金額"><button class="btn btn-primary"
-                                            onclick="addSubscription()"><i class="fas fa-plus"></i></button></div>
+                                    <div class="input-group mb-3"><input type="text" id="inpSubName" class="form-control"
+                                            placeholder="項目"><input type="number" id="inpSubAmount" class="form-control"
+                                            placeholder="金額"><button class="btn btn-primary" onclick="addSubscription()"><i
+                                                class="fas fa-plus"></i></button></div>
                                     <div class="d-flex justify-content-between align-items-center mb-2 px-1"><span
                                             class="small text-muted">總額</span><span class="fw-bold text-primary"
                                             id="totalSubsDisplay">$0</span></div>
@@ -1022,8 +1014,8 @@
                                 <!-- Assets Tab -->
                                 <div class="tab-pane fade" id="content-assets">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">資產盤點</h6>
-                                    <div class="mb-3"><label class="form-label fw-bold">現金/存款</label><input
-                                            type="number" id="inpCash" class="form-control" placeholder="0"></div>
+                                    <div class="mb-3"><label class="form-label fw-bold">現金/存款</label><input type="number"
+                                            id="inpCash" class="form-control" placeholder="0"></div>
                                     <div class="mb-3"><label class="form-label fw-bold">固定資產</label><input type="number"
                                             id="inpFixed" class="form-control" placeholder="0"></div>
                                 </div>
@@ -1051,8 +1043,10 @@
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">AI 模型</label>
                                         <select id="inpAiModel" class="form-select">
-                                            <option value="gemini-2.5-pro">Gemini 2.5 Pro (標準)</option>
-                                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (快速)</option>
+                                            <option value="gemini-2.5-flash-preview-09-2025">Gemini 2.5 Flash Preview (最新)
+                                            </option>
+                                            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                                         </select>
                                     </div>
                                     <hr>
@@ -1064,8 +1058,8 @@
                                 <!-- System Tab -->
                                 <div class="tab-pane fade" id="content-system">
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">系統</h6>
-                                    <div class="mb-3 form-check form-switch"><input class="form-check-input"
-                                            type="checkbox" id="strategyToggle"><label class="form-check-label fw-bold"
+                                    <div class="mb-3 form-check form-switch"><input class="form-check-input" type="checkbox"
+                                            id="strategyToggle"><label class="form-check-label fw-bold"
                                             for="strategyToggle">彈性模式</label></div>
                                     <h6 class="fw-bold mb-3 text-primary border-bottom pb-2 mt-4">備份</h6>
                                     <div class="row g-2 mb-3">
@@ -1136,8 +1130,7 @@
                                         <div class="fw-bold"><i class="fas fa-user-plus me-2"></i> 我是新用戶</div>
                                         <small class="text-muted">我想要建立新的財務規劃</small>
                                     </button>
-                                    <button class="btn btn-outline-secondary p-3 text-start"
-                                        onclick="showImportScreen()">
+                                    <button class="btn btn-outline-secondary p-3 text-start" onclick="showImportScreen()">
                                         <div class="fw-bold"><i class="fas fa-file-import me-2"></i> 我是舊用戶</div>
                                         <small class="text-muted">我已經有備份檔案 (.json)</small>
                                     </button>
@@ -1168,8 +1161,7 @@
                                     <h6 class="fw-bold mb-3">您的收入與目標</h6>
                                     <div class="mb-3">
                                         <label class="form-label small text-muted">每月主動收入 (薪資等)</label>
-                                        <input type="number" id="obInpActive" class="form-control"
-                                            placeholder="例如: 50000">
+                                        <input type="number" id="obInpActive" class="form-control" placeholder="例如: 50000">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small text-muted">每月被動收入 (股利/房租)</label>
@@ -1177,8 +1169,8 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small text-muted">目標總資產</label>
-                                        <input type="number" id="obInpTarget" class="form-control"
-                                            placeholder="例如: 10000000" value="10000000">
+                                        <input type="number" id="obInpTarget" class="form-control" placeholder="例如: 10000000"
+                                            value="10000000">
                                     </div>
                                 </div>
 
@@ -1210,12 +1202,28 @@
 
                                 <div class="d-flex justify-content-between mt-4">
                                     <button class="btn btn-light" id="btnObBack" onclick="prevWizardStep()">上一步</button>
-                                    <button class="btn btn-primary px-4" id="btnObNext"
-                                        onclick="nextWizardStep()">下一步</button>
+                                    <button class="btn btn-primary px-4" id="btnObNext" onclick="nextWizardStep()">下一步</button>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Modal for Alerts/Confirms -->
+    <div class="modal fade" id="msgModal" tabindex="-1" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title fw-bold" id="msgModalTitle">通知</h5>
+                </div>
+                <div class="modal-body" id="msgModalBody"></div>
+                <div class="modal-footer border-top-0 p-2">
+                    <button type="button" class="btn btn-light" id="msgModalCancel" style="display:none;"
+                        data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="msgModalOk" data-bs-dismiss="modal">確定</button>
                 </div>
             </div>
         </div>
@@ -1233,7 +1241,7 @@
             ratioLiving: 60, ratioInvest: 30,
             strategy: 'strict', isSetup: false,
             // AI Config
-            apiKey: '', aiModel: 'gemini-pro', aiAutoContext: true
+            apiKey: '', aiModel: 'gemini-2.5-flash-preview-09-2025', aiAutoContext: true
         };
 
         let appState = { ...defaultState };
@@ -1274,6 +1282,50 @@
             } catch (e) { console.error("DB Error:", e); }
         };
 
+        // --- Custom Alert/Confirm Logic ---
+        let msgModalObj;
+        function initMsgModal() {
+            if (!msgModalObj) msgModalObj = new bootstrap.Modal(document.getElementById('msgModal'));
+        }
+
+        function showAlert(msg) {
+            initMsgModal();
+            document.getElementById('msgModalTitle').innerText = '提示';
+            document.getElementById('msgModalBody').innerText = msg;
+            document.getElementById('msgModalCancel').style.display = 'none';
+            document.getElementById('msgModalOk').onclick = null;
+            msgModalObj.show();
+        }
+
+        function showConfirm(msg) {
+            initMsgModal();
+            return new Promise((resolve) => {
+                document.getElementById('msgModalTitle').innerText = '確認';
+                document.getElementById('msgModalBody').innerText = msg;
+                const btnCancel = document.getElementById('msgModalCancel');
+                const btnOk = document.getElementById('msgModalOk');
+
+                btnCancel.style.display = 'inline-block';
+
+                // One-time event listeners
+                const handleOk = () => { resolve(true); };
+                const handleCancel = () => { resolve(false); };
+
+                btnOk.onclick = handleOk;
+                btnCancel.onclick = handleCancel;
+
+                // Handle backdrop click or esc
+                const el = document.getElementById('msgModal');
+                el.addEventListener('hidden.bs.modal', function handler() {
+                    resolve(false); // Default to false if closed without clicking buttons
+                    el.removeEventListener('hidden.bs.modal', handler);
+                }, { once: true });
+
+                msgModalObj.show();
+            });
+        }
+
+
         function initDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -1300,8 +1352,8 @@
             const file = input.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
-                try { if (!db) await initDB(); } catch (err) { console.error(err); alert("系統錯誤: 資料庫無法存取"); return; }
-                if (!confirm("匯入將覆蓋現有資料，確定？")) { input.value = ''; return; }
+                try { if (!db) await initDB(); } catch (err) { console.error(err); showAlert("系統錯誤: 資料庫無法存取"); return; }
+                if (!await showConfirm("匯入將覆蓋現有資料，確定？")) { input.value = ''; return; }
                 const data = JSON.parse(e.target.result);
                 const stores = ['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance', 'chat_history'];
                 const tx = db.transaction(stores, 'readwrite');
@@ -1395,7 +1447,7 @@
 
             // AI Settings
             document.getElementById('inpApiKey').value = appState.apiKey || '';
-            document.getElementById('inpAiModel').value = appState.aiModel || 'gemini-pro';
+            document.getElementById('inpAiModel').value = appState.aiModel || 'gemini-2.5-flash-preview-09-2025';
             document.getElementById('aiAutoContext').checked = appState.aiAutoContext !== false; // default true
 
             calcAllocations();
@@ -1444,7 +1496,7 @@
                 importData(input);
                 // importData reloads the page, so no need to close modal manually
             } else {
-                alert("請選擇檔案");
+                showAlert("請選擇檔案");
             }
         }
 
@@ -1542,7 +1594,7 @@
 
         function calcLoanDetails() { const t = parseFloat(document.getElementById('inpLoanTotal').value) || 0; const r = parseFloat(document.getElementById('inpLoanRate').value) || 0; const m = parseInt(document.getElementById('inpLoanMonths').value) || 0; let p = 0; if (t > 0 && m > 0) { if (r === 0) p = t / m; else { const i = r / 100 / 12; p = t * (i * Math.pow(1 + i, m)) / (Math.pow(1 + i, m) - 1) } } document.getElementById('inpLoanMonthly').value = p; setText('txtLoanMonthly', formatCurrency(Math.round(p))); if (document.getElementById('inpLoanStart').value && m > 0) { const d = new Date(document.getElementById('inpLoanStart').value); d.setMonth(d.getMonth() + m); document.getElementById('inpLoanEnd').value = d.toISOString().split('T')[0] } }
         async function addLoan() { const c = document.getElementById('inpLoanCat').value; const n = document.getElementById('inpLoanName').value; const t = parseFloat(document.getElementById('inpLoanTotal').value); const r = parseFloat(document.getElementById('inpLoanRate').value); const s = document.getElementById('inpLoanStart').value; const e = document.getElementById('inpLoanEnd').value; const m = parseFloat(document.getElementById('inpLoanMonthly').value); if (!n || isNaN(m)) return; await new Promise(x => getStore('loans', 'readwrite').add({ category: c, name: n, totalAmount: t, rate: r, startDate: s, endDate: e, monthlyPayment: m }).onsuccess = x); await refreshLoans(); document.getElementById('inpLoanName').value = '' }
-        async function deleteLoan(id) { if (confirm("刪除?")) await new Promise(x => getStore('loans', 'readwrite').delete(id).onsuccess = x); await refreshLoans() }
+        async function deleteLoan(id) { if (await showConfirm("確定要刪除這筆貸款紀錄嗎？")) await new Promise(x => getStore('loans', 'readwrite').delete(id).onsuccess = x); await refreshLoans() }
         async function refreshLoans() {
             loans = await new Promise(x => getStore('loans').getAll().onsuccess = e => x(e.target.result));
             const el = document.getElementById('loanList');
@@ -1575,7 +1627,7 @@
         async function refreshSubscriptions() { subscriptions = await new Promise(x => getStore('subscriptions').getAll().onsuccess = e => x(e.target.result)); const el = document.getElementById('subsList'); el.innerHTML = ''; let t = 0; subscriptions.forEach(s => { t += s.amount; el.innerHTML += `<div class="sub-item shadow-sm border-0"><span>${s.name} ($${s.amount})</span><button class="btn btn-sm text-danger" onclick="removeSubscription(${s.id})"><i class="fas fa-trash-alt"></i></button></div>` }); setText('totalSubsDisplay', formatCurrency(t)) }
 
         async function addStock() { const s = document.getElementById('inpStockSymbol').value; const c = parseFloat(document.getElementById('inpStockCost').value); const h = parseFloat(document.getElementById('inpStockShares').value); if (!s) return; await new Promise(x => getStore('stocks', 'readwrite').add({ symbol: s, cost: c, shares: h, currentPrice: c, lastUpdate: Date.now() }).onsuccess = x); stockModal.hide(); await loadData(); refreshStockPrices() }
-        async function deleteStock(id) { if (confirm("刪除?")) await new Promise(x => getStore('stocks', 'readwrite').delete(id).onsuccess = x); loadData().then(renderDashboard) }
+        async function deleteStock(id) { if (await showConfirm("確定要刪除這支股票嗎？")) await new Promise(x => getStore('stocks', 'readwrite').delete(id).onsuccess = x); loadData().then(renderDashboard) }
         async function fetchStockPrice(symbol) {
             try {
                 const proxy = "https://corsproxy.io/?";
@@ -1626,7 +1678,7 @@
 
         async function settleMonth() {
             const v = parseFloat(document.getElementById('inpMonthSpend').value);
-            if (isNaN(v)) { alert("金額?"); return }
+            if (isNaN(v)) { showAlert("請輸入有效的金額"); return }
             const s = subscriptions.reduce((a, b) => a + b.amount, 0);
             const now = new Date();
             const activeLoans = loans.filter(l => { if (!l.startDate || !l.endDate) return true; const start = new Date(l.startDate); const end = new Date(l.endDate); return start <= now && now <= end; });
@@ -1643,7 +1695,7 @@
             generateFinancialTip('settlement', recordId);
         }
 
-        async function clearDB() { if (!confirm("清空?")) return; const tx = db.transaction(['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance', 'chat_history'], 'readwrite');['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance', 'chat_history'].forEach(s => tx.objectStore(s).clear()); tx.oncomplete = () => location.reload() }
+        async function clearDB() { if (!await showConfirm("確定要清空所有資料嗎？")) return; const tx = db.transaction(['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance', 'chat_history'], 'readwrite');['settings', 'records', 'stocks', 'subscriptions', 'loans', 'insurance', 'chat_history'].forEach(s => tx.objectStore(s).clear()); tx.oncomplete = () => location.reload() }
 
         // --- Render Dashboard ---
         async function renderDashboard() {
@@ -1726,7 +1778,7 @@
         }
 
         async function resetChat() {
-            if (!confirm("確定要清除所有對話紀錄嗎？")) return;
+            if (!await showConfirm("確定要清除所有對話紀錄嗎？")) return;
             await new Promise(r => getStore('chat_history', 'readwrite').clear().onsuccess = r);
             chatHistory = [];
             document.getElementById('chatBody').innerHTML = `
@@ -1935,12 +1987,12 @@
         }
 
 
-        function analyzeHistoryRecord(id) {
-            if (!confirm("確定要讓 AI 分析這筆歷史紀錄嗎？")) return;
+        async function analyzeHistoryRecord(id) {
+            if (!await showConfirm("確定要讓 AI 分析這筆歷史紀錄嗎？")) return;
             generateFinancialTip('history', id);
         }
 
-                async function generateFinancialTip(context = 'startup', recordId = null, force = false) {
+        async function generateFinancialTip(context = 'startup', recordId = null, force = false) {
             const apiKey = appState.apiKey;
             if (!apiKey) return;
 
@@ -1967,13 +2019,13 @@
 
             if (context === 'startup') {
                 contextData = await getFinancialContext();
-                
+
                 // Fetch Trend Data
                 try {
                     const snapshots = await new Promise(x => getStore('daily_snapshots').getAll().onsuccess = e => x(e.target.result));
                     const recent = snapshots.sort((a, b) => b.timestamp - a.timestamp).slice(0, 7).reverse();
                     if (recent.length > 1) {
-                        const trendStr = recent.map(s => `${s.date}: $${Math.round(s.totalAssets/1000)}k`).join(', ');
+                        const trendStr = recent.map(s => `${s.date}: $${Math.round(s.totalAssets / 1000)}k`).join(', ');
                         contextData += `\n\n[最近 7 天資產趨勢]: ${trendStr}`;
                     }
                 } catch (e) { console.error("Trend fetch error", e); }
@@ -1988,7 +2040,7 @@
                     const recReq = await new Promise(x => getStore('records').getAll().onsuccess = e => x(e.target.result));
                     rec = recReq.sort((a, b) => b.id - a.id)[0]; // The one just added
                 }
-                
+
                 if (rec) {
                     // Calculate Fixed Expenses (Estimate based on current settings)
                     const s = subscriptions.reduce((a, b) => a + b.amount, 0);
@@ -2007,7 +2059,7 @@
                         budget: appState.currentBudget
                     };
                     contextData = JSON.stringify(simpleContext);
-                    prompt = context === 'history' 
+                    prompt = context === 'history'
                         ? "用戶正在回顧一筆過去的月結算紀錄。請根據簡化的財務數據 (JSON) 回傳 JSON 格式：{ \"summary\": \"針對該月表現的一句話短評 (20字內)\", \"detail\": \"完整的分析與建議 (Markdown 格式)\" }。注意：variableSpend 是變動支出，estimatedFixedSpend 是固定支出，請基於 estimatedTotalSpend 評估。"
                         : "用戶剛完成月結算。請根據簡化的財務數據 (JSON) 回傳 JSON 格式：{ \"summary\": \"針對本月結算結果的一句話短評 (20字內)\", \"detail\": \"完整的月結算分析與建議 (Markdown 格式)\" }。注意：variableSpend 是變動支出，estimatedFixedSpend 是固定支出，請基於 estimatedTotalSpend 評估。";
                 }
@@ -2044,7 +2096,7 @@
 
                         // Persistence for Settlement/History
                         if ((context === 'settlement' || context === 'history') && (recordId || context === 'settlement')) {
-                            const targetId = recordId; 
+                            const targetId = recordId;
                             if (targetId) {
                                 const tx = db.transaction(['records'], 'readwrite');
                                 const store = tx.objectStore('records');
